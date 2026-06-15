@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box, Heading, Button, Table, Thead, Tbody, Tr, Th, Td, Flex, Input,
-  useToast, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter,
-  FormControl, FormLabel, useColorModeValue, IconButton
-} from '@chakra-ui/react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Search, Trash2, X } from 'lucide-react';
 import axios from 'axios';
 
 interface Patient {
@@ -18,41 +13,40 @@ const Patients: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const toast = useToast();
-  const cardBg = useColorModeValue('white', 'gray.800');
-
-  // Form State
+  const [showModal, setShowModal] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [formData, setFormData] = useState({ name: '', cpf: '', dateOfBirth: '', phone: '' });
+
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const fetchPatients = async () => {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.get(`http://localhost:3000/api/patients?query=${search}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setPatients(res.data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  useEffect(() => {
-    fetchPatients();
-  }, [search]);
+  useEffect(() => { fetchPatients(); }, [search]);
 
   const handleSave = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       await axios.post('http://localhost:3000/api/patients', formData, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      toast({ title: 'Paciente salvo com sucesso', status: 'success' });
-      onClose();
+      showToast('Paciente cadastrado com sucesso!', 'success');
+      setShowModal(false);
+      setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '' });
       fetchPatients();
-    } catch (error: any) {
-      toast({ title: 'Erro ao salvar', description: error.response?.data?.error, status: 'error' });
+    } catch (err: any) {
+      showToast(err.response?.data?.error || 'Erro ao salvar.', 'error');
     } finally {
       setLoading(false);
     }
@@ -63,89 +57,127 @@ const Patients: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`http://localhost:3000/api/patients/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      toast({ title: 'Paciente inativado', status: 'info' });
+      showToast('Paciente inativado.', 'success');
       fetchPatients();
-    } catch (error) {
-      console.error(error);
-    }
+    } catch { showToast('Erro ao inativar.', 'error'); }
   };
 
   return (
-    <Box>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg">Pacientes</Heading>
-        <Button leftIcon={<Plus size={18} />} colorScheme="brand" onClick={onOpen}>Novo Paciente</Button>
-      </Flex>
+    <div>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
+          background: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+          border: `1px solid ${toast.type === 'success' ? '#BBF7D0' : '#FECACA'}`,
+          color: toast.type === 'success' ? '#15803D' : '#B91C1C',
+          padding: '12px 16px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 500,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        }}>
+          {toast.msg}
+        </div>
+      )}
 
-      <Box bg={cardBg} p={6} borderRadius="xl" boxShadow="sm">
-        <Input 
-          placeholder="Buscar por nome ou CPF..." 
-          mb={6} maxW="400px" 
-          value={search} 
-          onChange={(e) => setSearch(e.target.value)} 
-        />
-        
-        <Box overflowX="auto">
-          <Table variant="simple">
-            <Thead>
-              <Tr>
-                <Th>Nome</Th>
-                <Th>CPF</Th>
-                <Th>Telefone</Th>
-                <Th width="80px">Ações</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {patients.map(p => (
-                <Tr key={p.id}>
-                  <Td fontWeight="medium">{p.name}</Td>
-                  <Td>{p.cpf}</Td>
-                  <Td>{p.phone}</Td>
-                  <Td>
-                    <IconButton aria-label="Deletar" icon={<Trash2 size={16} />} size="sm" colorScheme="red" variant="ghost" onClick={() => handleDelete(p.id)} />
-                  </Td>
-                </Tr>
+      {/* Toolbar */}
+      <div className="flex-between mb-4">
+        <div className="search-wrapper" style={{ width: '320px' }}>
+          <Search className="search-icon" />
+          <input
+            type="text"
+            className="form-input search-input"
+            placeholder="Buscar por nome ou CPF..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <Plus size={15} />
+          Novo Paciente
+        </button>
+      </div>
+
+      {/* Table */}
+      <div className="card">
+        {patients.length === 0 ? (
+          <div className="empty-state">Nenhum paciente encontrado.</div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Telefone</th>
+                <th style={{ width: '80px', textAlign: 'right' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {patients.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className="patient-avatar">
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontWeight: 500 }}>{p.name}</span>
+                    </div>
+                  </td>
+                  <td>{p.cpf}</td>
+                  <td>{p.phone}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button
+                      className="btn-icon"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '6px' }}
+                      onClick={() => handleDelete(p.id)}
+                      title="Inativar paciente"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </Tbody>
-          </Table>
-        </Box>
-      </Box>
+            </tbody>
+          </table>
+        )}
+      </div>
 
-      {/* Modal de Cadastro */}
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <ModalOverlay backdropFilter="blur(4px)" />
-        <ModalContent>
-          <ModalHeader>Cadastrar Paciente</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Flex direction="column" gap={4}>
-              <FormControl isRequired>
-                <FormLabel>Nome Completo</FormLabel>
-                <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>CPF</FormLabel>
-                <Input value={formData.cpf} onChange={e => setFormData({...formData, cpf: e.target.value})} />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Data de Nascimento</FormLabel>
-                <Input type="date" value={formData.dateOfBirth} onChange={e => setFormData({...formData, dateOfBirth: e.target.value})} />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Telefone</FormLabel>
-                <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-              </FormControl>
-            </Flex>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose}>Cancelar</Button>
-            <Button colorScheme="brand" onClick={handleSave} isLoading={loading}>Salvar Paciente</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </Box>
+      {/* Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <span className="modal-title">Cadastrar Paciente</span>
+              <button className="modal-close" onClick={() => setShowModal(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Nome Completo *</label>
+                <input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Ex: João da Silva" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">CPF *</label>
+                <input type="text" className="form-input" value={formData.cpf} onChange={(e) => setFormData({ ...formData, cpf: e.target.value })} placeholder="000.000.000-00" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Data de Nascimento *</label>
+                <input type="date" className="form-input" value={formData.dateOfBirth} onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Telefone *</label>
+                <input type="text" className="form-input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(00) 00000-0000" />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
+                {loading ? 'Salvando...' : 'Salvar Paciente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

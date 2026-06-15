@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box, Heading, Button, Flex, Text, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter,
-  FormControl, FormLabel, Select, Input, useToast, useColorModeValue, VStack, Badge, HStack, IconButton
-} from '@chakra-ui/react';
-import { Plus, ChevronLeft, ChevronRight, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Check, X } from 'lucide-react';
 import axios from 'axios';
 
 interface Appointment {
@@ -16,80 +12,96 @@ interface Appointment {
   dentist: { name: string };
 }
 
+const statusBadge = (status: string) => {
+  const map: Record<string, { label: string; cls: string }> = {
+    SCHEDULED: { label: 'Agendada', cls: 'badge badge-blue' },
+    CONFIRMED: { label: 'Confirmada', cls: 'badge badge-purple' },
+    COMPLETED: { label: 'Realizada', cls: 'badge badge-green' },
+    CANCELED: { label: 'Cancelada', cls: 'badge badge-red' },
+    NO_SHOW: { label: 'Faltou', cls: 'badge badge-amber' },
+  };
+  const s = map[status] || { label: status, cls: 'badge badge-blue' };
+  return <span className={s.cls}>{s.label}</span>;
+};
+
+const formatTime = (iso: string) => {
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+};
+
 const Agenda: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [dentists, setDentists] = useState<any[]>([]);
-  
-  // Controle de Data Diária
   const [currentDate, setCurrentDate] = useState(() => {
     const d = new Date();
-    // Ajusta para o timezone local
     return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   });
-
   const [loading, setLoading] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const toast = useToast();
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const appointmentBg = useColorModeValue('gray.50', 'gray.700');
+  const [showModal, setShowModal] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  // Form State
   const [formData, setFormData] = useState({
     patientId: '', dentistId: '', time: '', durationInMinutes: 30, serviceType: ''
+  });
+
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const todayStr = (() => {
+    const d = new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+  })();
+
+  const isToday = currentDate === todayStr;
+
+  const displayDate = new Date(`${currentDate}T12:00:00.000Z`).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
   });
 
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-
       const [apptRes, patRes, dentRes] = await Promise.all([
         axios.get(`http://localhost:3000/api/appointments?date=${currentDate}`, { headers }),
         axios.get('http://localhost:3000/api/patients', { headers }),
         axios.get('http://localhost:3000/api/dentists', { headers }),
       ]);
-
       setAppointments(apptRes.data);
       setPatients(patRes.data);
       setDentists(dentRes.data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [currentDate]);
+  useEffect(() => { fetchData(); }, [currentDate]);
 
   const changeDate = (days: number) => {
-    const d = new Date(`${currentDate}T12:00:00.000Z`); // meio dia para evitar problemas de timezone
+    const d = new Date(`${currentDate}T12:00:00.000Z`);
     d.setDate(d.getDate() + days);
     setCurrentDate(d.toISOString().split('T')[0]);
   };
+
+  const goToday = () => setCurrentDate(todayStr);
 
   const handleSave = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      // Combina a data atual com o horário selecionado
-      const dateTimeString = `${currentDate}T${formData.time}:00.000Z`;
-
       await axios.post('http://localhost:3000/api/appointments', {
         patientId: formData.patientId,
         dentistId: formData.dentistId,
-        date: dateTimeString,
+        date: `${currentDate}T${formData.time}:00.000Z`,
         durationInMinutes: Number(formData.durationInMinutes),
-        serviceType: formData.serviceType
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      toast({ title: 'Consulta agendada', status: 'success' });
-      onClose();
+        serviceType: formData.serviceType,
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      showToast('Consulta agendada com sucesso!', 'success');
+      setShowModal(false);
+      setFormData({ patientId: '', dentistId: '', time: '', durationInMinutes: 30, serviceType: '' });
       fetchData();
-    } catch (error: any) {
-      toast({ title: 'Erro ao agendar', description: error.response?.data?.error, status: 'error' });
+    } catch (err: any) {
+      showToast(err.response?.data?.error || 'Erro ao agendar.', 'error');
     } finally {
       setLoading(false);
     }
@@ -101,120 +113,159 @@ const Agenda: React.FC = () => {
       await axios.patch(`http://localhost:3000/api/appointments/${id}/status`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast({ title: 'Status atualizado', status: 'success' });
+      showToast('Status atualizado!', 'success');
       fetchData();
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'SCHEDULED': return <Badge colorScheme="blue">Agendada</Badge>;
-      case 'CONFIRMED': return <Badge colorScheme="purple">Confirmada</Badge>;
-      case 'CANCELED': return <Badge colorScheme="red">Cancelada</Badge>;
-      case 'COMPLETED': return <Badge colorScheme="green">Realizada</Badge>;
-      case 'NO_SHOW': return <Badge colorScheme="orange">Faltou</Badge>;
-      default: return <Badge>{status}</Badge>;
-    }
-  };
-
-  const formatTime = (isoString: string) => {
-    const d = new Date(isoString);
-    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+    } catch { showToast('Erro ao atualizar.', 'error'); }
   };
 
   return (
-    <Box>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg">Agenda Diária</Heading>
-        <Button leftIcon={<Plus size={18} />} colorScheme="brand" onClick={onOpen}>Nova Consulta</Button>
-      </Flex>
+    <div>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
+          background: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+          border: `1px solid ${toast.type === 'success' ? '#BBF7D0' : '#FECACA'}`,
+          color: toast.type === 'success' ? '#15803D' : '#B91C1C',
+          padding: '12px 16px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 500,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        }}>
+          {toast.msg}
+        </div>
+      )}
 
-      <Box bg={cardBg} p={6} borderRadius="xl" boxShadow="sm">
-        <Flex justify="center" align="center" mb={6} gap={4}>
-          <IconButton aria-label="Anterior" icon={<ChevronLeft />} onClick={() => changeDate(-1)} />
-          <Heading size="md" minW="150px" textAlign="center">{currentDate.split('-').reverse().join('/')}</Heading>
-          <IconButton aria-label="Próximo" icon={<ChevronRight />} onClick={() => changeDate(1)} />
-        </Flex>
+      {/* Date nav + button */}
+      <div className="flex-between mb-6">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button className="btn btn-outline btn-sm" onClick={() => changeDate(-1)} style={{ padding: '5px 8px' }}>
+            <ChevronLeft size={16} />
+          </button>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{displayDate}</div>
+            {isToday ? (
+              <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 500 }}>Hoje</div>
+            ) : (
+              <button onClick={goToday} style={{ fontSize: '12px', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                Ir para hoje
+              </button>
+            )}
+          </div>
+          <button className="btn btn-outline btn-sm" onClick={() => changeDate(1)} style={{ padding: '5px 8px' }}>
+            <ChevronRight size={16} />
+          </button>
+        </div>
 
-        <VStack align="stretch" spacing={4}>
-          {appointments.length === 0 ? (
-            <Text color="gray.500" textAlign="center" py={8}>Nenhuma consulta para este dia.</Text>
-          ) : (
-            appointments.map(appt => (
-              <Flex key={appt.id} p={4} bg={appointmentBg} borderRadius="md" borderWidth="1px" borderColor="gray.100" justify="space-between" align="center">
-                <Box>
-                  <Text fontSize="xl" fontWeight="bold" color="brand.500">{formatTime(appt.date)}</Text>
-                  <Text fontSize="sm" color="gray.500">{appt.durationInMinutes} min</Text>
-                </Box>
-                <Box flex="1" ml={6}>
-                  <Text fontWeight="bold">{appt.patient.name}</Text>
-                  <Text fontSize="sm" color="gray.500">Procedimento: {appt.serviceType} • {appt.patient.phone}</Text>
-                  <Text fontSize="xs" color="gray.400">Dentista: {appt.dentist.name}</Text>
-                </Box>
-                <VStack align="flex-end">
-                  {getStatusBadge(appt.status)}
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <Plus size={15} />
+          Nova Consulta
+        </button>
+      </div>
+
+      {/* Appointments list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {appointments.length === 0 ? (
+          <div className="card">
+            <div className="empty-state">Nenhuma consulta para este dia.</div>
+          </div>
+        ) : (
+          appointments.map((appt) => (
+            <div key={appt.id} className="card" style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                {/* Time */}
+                <div style={{ minWidth: '70px' }}>
+                  <div className="table-time">{formatTime(appt.date)}</div>
+                  <div className="table-time-sub">{appt.durationInMinutes} min</div>
+                </div>
+
+                {/* Info */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '2px' }}>{appt.patient.name}</div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    {appt.serviceType} · {appt.patient.phone}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Dr(a). {appt.dentist.name}
+                  </div>
+                </div>
+
+                {/* Status + actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {statusBadge(appt.status)}
                   {appt.status !== 'CANCELED' && appt.status !== 'COMPLETED' && (
-                    <HStack mt={2}>
-                      <IconButton aria-label="Confirmar" icon={<CheckCircle size={16} />} size="sm" colorScheme="green" variant="ghost" onClick={() => updateStatus(appt.id, 'CONFIRMED')} />
-                      <IconButton aria-label="Cancelar" icon={<XCircle size={16} />} size="sm" colorScheme="red" variant="ghost" onClick={() => updateStatus(appt.id, 'CANCELED')} />
-                    </HStack>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        className="btn btn-outline-green btn-sm"
+                        onClick={() => updateStatus(appt.id, 'CONFIRMED')}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Check size={13} />
+                        Confirmar
+                      </button>
+                      <button
+                        className="btn btn-outline-red btn-sm"
+                        onClick={() => updateStatus(appt.id, 'CANCELED')}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <X size={13} />
+                        Cancelar
+                      </button>
+                    </div>
                   )}
-                </VStack>
-              </Flex>
-            ))
-          )}
-        </VStack>
-      </Box>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
-      {/* Modal de Agendamento */}
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay backdropFilter="blur(4px)" />
-        <ModalContent>
-          <ModalHeader>Agendar Consulta</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Flex direction="column" gap={4}>
-              <FormControl isRequired>
-                <FormLabel>Paciente</FormLabel>
-                <Select placeholder="Selecione..." value={formData.patientId} onChange={e => setFormData({...formData, patientId: e.target.value})}>
-                  {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </Select>
-              </FormControl>
-
-              <FormControl isRequired>
-                <FormLabel>Dentista</FormLabel>
-                <Select placeholder="Selecione..." value={formData.dentistId} onChange={e => setFormData({...formData, dentistId: e.target.value})}>
-                  {dentists.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </Select>
-              </FormControl>
-
-              <HStack>
-                <FormControl isRequired>
-                  <FormLabel>Horário</FormLabel>
-                  <Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel>Duração (min)</FormLabel>
-                  <Input type="number" step="15" value={formData.durationInMinutes} onChange={e => setFormData({...formData, durationInMinutes: Number(e.target.value)})} />
-                </FormControl>
-              </HStack>
-
-              <FormControl isRequired>
-                <FormLabel>Serviço / Procedimento</FormLabel>
-                <Input value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} />
-              </FormControl>
-            </Flex>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose}>Cancelar</Button>
-            <Button colorScheme="brand" onClick={handleSave} isLoading={loading}>Confirmar Agendamento</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </Box>
+      {/* Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <span className="modal-title">Agendar Consulta</span>
+              <button className="modal-close" onClick={() => setShowModal(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Paciente *</label>
+                <select className="form-select" value={formData.patientId} onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}>
+                  <option value="">Selecione...</option>
+                  {patients.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Dentista *</label>
+                <select className="form-select" value={formData.dentistId} onChange={(e) => setFormData({ ...formData, dentistId: e.target.value })}>
+                  <option value="">Selecione...</option>
+                  {dentists.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Horário *</label>
+                  <input type="time" className="form-input" value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Duração (min)</label>
+                  <input type="number" className="form-input" step="15" value={formData.durationInMinutes} onChange={(e) => setFormData({ ...formData, durationInMinutes: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Serviço / Procedimento *</label>
+                <input type="text" className="form-input" placeholder="Ex: Limpeza, Extração..." value={formData.serviceType} onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })} />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
+                {loading ? 'Agendando...' : 'Confirmar Agendamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

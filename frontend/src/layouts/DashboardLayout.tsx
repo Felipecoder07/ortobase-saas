@@ -1,59 +1,104 @@
 import React from 'react';
-import { Box, Flex, Heading, Text, Button, useColorModeValue, VStack } from '@chakra-ui/react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  Stethoscope,
+  DollarSign,
+  Moon,
+  LogOut,
+} from 'lucide-react';
+
+const navItems = [
+  { name: 'Visão Geral', path: '/dashboard', icon: LayoutDashboard },
+  { name: 'Agenda', path: '/dashboard/agenda', icon: Calendar },
+  { name: 'Pacientes', path: '/dashboard/patients', icon: Users },
+  { name: 'Dentistas', path: '/dashboard/dentists', icon: Stethoscope },
+  { name: 'Financeiro', path: '/dashboard/finance', icon: DollarSign },
+];
+
+const pageTitles: Record<string, string> = {
+  '/dashboard': 'Visão Geral',
+  '/dashboard/agenda': 'Agenda',
+  '/dashboard/patients': 'Pacientes',
+  '/dashboard/dentists': 'Dentistas',
+  '/dashboard/finance': 'Financeiro',
+};
 
 const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const bg = useColorModeValue('gray.50', 'gray.900');
-  const cardBg = useColorModeValue('white', 'gray.800');
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
-    window.location.href = '/login';
+    navigate('/login');
   };
 
-  const navItems = [
-    { name: 'Visão Geral', path: '/dashboard' },
-    { name: 'Agenda', path: '/dashboard/agenda' },
-    { name: 'Pacientes', path: '/dashboard/patients' },
-    { name: 'Dentistas', path: '/dashboard/dentists' },
-    { name: 'Financeiro', path: '/dashboard/finance' },
-  ];
+  const pageTitle = pageTitles[location.pathname] || 'OrtoBase';
 
   return (
-    <Flex minH="100vh" bg={bg}>
-      {/* Sidebar Simples */}
-      <Box w="250px" bg={cardBg} borderRight="1px" borderColor="gray.200" p={4} display={{ base: 'none', md: 'block' }}>
-        <Heading size="md" mb={8} color="brand.500">Bot Odonto</Heading>
-        <Text color="gray.500" mb={4} fontSize="sm" fontWeight="bold" textTransform="uppercase">Menu Principal</Text>
-        <VStack align="stretch" spacing={2}>
-          {navItems.map((item) => (
-            <Button
-              key={item.path}
-              w="full"
-              justifyContent="flex-start"
-              variant={location.pathname === item.path ? 'solid' : 'ghost'}
-              colorScheme={location.pathname === item.path ? 'brand' : 'gray'}
-              onClick={() => navigate(item.path)}
-            >
-              {item.name}
-            </Button>
-          ))}
-        </VStack>
-      </Box>
+    <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2C8.5 2 6 4 6 7c0 2 .8 3.5 2 4.5L7 19c-.1.5.3 1 .8 1.1.5.1 1-.3 1.1-.8L9.5 14h5l.6 5.3c.1.5.6.9 1.1.8.5-.1.9-.6.8-1.1L16 11.5C17.2 10.5 18 9 18 7c0-3-2.5-5-6-5z" />
+            </svg>
+          </div>
+          <div className="sidebar-logo-text">
+            <h2>OrtoBase</h2>
+            <p>Gestão Odontológica</p>
+          </div>
+        </div>
 
-      {/* Conteúdo Principal */}
-      <Box flex="1" p={8}>
-        <Flex justify="flex-end" align="center" mb={8}>
-          <Button onClick={handleLogout} colorScheme="red" variant="outline" size="sm">Sair</Button>
-        </Flex>
+        <nav className="sidebar-nav">
+          <div className="sidebar-nav-label">Menu Principal</div>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <button
+                key={item.path}
+                className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => navigate(item.path)}
+              >
+                <Icon className="sidebar-nav-icon" size={16} />
+                {item.name}
+              </button>
+            );
+          })}
+        </nav>
 
-        {/* Aqui renderiza a página atual baseada na rota */}
-        <Outlet />
-      </Box>
-    </Flex>
+        <div className="sidebar-footer">
+          <button className="sidebar-dark-toggle">
+            <Moon size={15} style={{ opacity: 0.7 }} />
+            Modo Escuro
+          </button>
+          <button className="sidebar-logout" onClick={handleLogout}>
+            <LogOut size={15} />
+            Sair do Sistema
+          </button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="main-wrapper">
+        <header className="main-header">
+          <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="main-header-title">{pageTitle}</span>
+            <div className="main-header-avatar">U</div>
+          </div>
+        </header>
+        <main className="main-content">
+          <div className="container">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </div>
   );
 };
 

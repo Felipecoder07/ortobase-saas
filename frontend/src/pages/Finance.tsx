@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box, Heading, Flex, Text, Button, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter,
-  FormControl, FormLabel, Select, Input, useToast, useColorModeValue, VStack, Badge, HStack, SimpleGrid, Table, Thead, Tbody, Tr, Th, Td,
-  Tabs, TabList, TabPanels, Tab, TabPanel, Textarea
-} from '@chakra-ui/react';
-import { DollarSign, MessageCircle, RefreshCcw } from 'lucide-react';
+import { DollarSign, AlertCircle, UserX, MessageCircle, RefreshCw, X } from 'lucide-react';
 import axios from 'axios';
 
 const Finance: React.FC = () => {
@@ -12,48 +7,41 @@ const Finance: React.FC = () => {
   const [defaulters, setDefaulters] = useState<any[]>([]);
   const [reports, setReports] = useState({ daily: 0, monthly: 0, yearly: 0 });
   const [loading, setLoading] = useState(false);
-  
-  // Payment Modal
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  // Refund Modal
-  const { isOpen: isRefundOpen, onOpen: onRefundOpen, onClose: onRefundClose } = useDisclosure();
-  
-  const toast = useToast();
-  
-  const bg = useColorModeValue('white', 'gray.800');
-  const cardBg = useColorModeValue('gray.50', 'gray.700');
+  const [activeTab, setActiveTab] = useState<'pending' | 'paid' | 'reports'>('pending');
 
-  // Selecionado para pagar
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [selectedAppt, setSelectedAppt] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    method: 'CREDIT_CARD', discount: 0, installments: 1
-  });
-
-  // Selecionado para estorno
   const [refundAppt, setRefundAppt] = useState<any>(null);
   const [refundReason, setRefundReason] = useState('');
+  const [payForm, setPayForm] = useState({ method: 'CREDIT_CARD', discount: 0, installments: 1 });
+
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      
-      const resAppts = await axios.get(`http://localhost:3000/api/appointments`, { headers });
-      setAppointments(resAppts.data);
-
-      const resDefaulters = await axios.get(`http://localhost:3000/api/finance/defaulters`, { headers });
-      setDefaulters(resDefaulters.data);
-
-      const resReports = await axios.get(`http://localhost:3000/api/finance/reports`, { headers });
-      setReports(resReports.data);
-    } catch (err) {
-      console.error(err);
-    }
+      const [apptRes, defRes, repRes] = await Promise.all([
+        axios.get('http://localhost:3000/api/appointments', { headers }),
+        axios.get('http://localhost:3000/api/finance/defaulters', { headers }),
+        axios.get('http://localhost:3000/api/finance/reports', { headers }),
+      ]);
+      setAppointments(apptRes.data);
+      setDefaulters(defRes.data);
+      setReports(repRes.data);
+    } catch (err) { console.error(err); }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
+
+  const pending = appointments.filter((a) => !a.payment && a.status !== 'CANCELED');
+  const paid = appointments.filter((a) => a.payment && a.payment.status === 'PAID');
 
   const handlePay = async () => {
     setLoading(true);
@@ -61,306 +49,327 @@ const Finance: React.FC = () => {
       const token = localStorage.getItem('token');
       await axios.post('http://localhost:3000/api/finance', {
         appointmentId: selectedAppt.id,
-        method: formData.method,
-        discount: Number(formData.discount),
-        installments: Number(formData.installments)
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      toast({ title: 'Pagamento registrado!', status: 'success' });
-      onClose();
+        method: payForm.method,
+        discount: Number(payForm.discount),
+        installments: Number(payForm.installments),
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      showToast('Pagamento registrado!', 'success');
+      setShowPayModal(false);
       fetchData();
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.response?.data?.error, status: 'error' });
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) {
+      showToast(err.response?.data?.error || 'Erro ao registrar.', 'error');
+    } finally { setLoading(false); }
   };
 
   const handleRefund = async () => {
-    if (!refundReason) {
-      toast({ title: 'Erro', description: 'A justificativa é obrigatória.', status: 'error' });
-      return;
-    }
+    if (!refundReason) { showToast('A justificativa é obrigatória.', 'error'); return; }
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:3000/api/finance/${refundAppt.payment.id}/refund`, {
-        refundReason
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      toast({ title: 'Estorno realizado!', status: 'success' });
-      onRefundClose();
+      await axios.post(`http://localhost:3000/api/finance/${refundAppt.payment.id}/refund`,
+        { refundReason },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showToast('Estorno realizado!', 'success');
+      setShowRefundModal(false);
+      setRefundReason('');
       fetchData();
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.response?.data?.error, status: 'error' });
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) {
+      showToast(err.response?.data?.error || 'Erro ao estornar.', 'error');
+    } finally { setLoading(false); }
   };
 
   const handleSendReceipt = async (paymentId: string) => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(`http://localhost:3000/api/finance/${paymentId}/receipt`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      toast({ title: 'Comprovante enviado via WhatsApp!', status: 'success' });
-    } catch (error: any) {
-      toast({ title: 'Erro ao enviar comprovante', status: 'error' });
-    }
+      showToast('Comprovante enviado via WhatsApp!', 'success');
+    } catch { showToast('Erro ao enviar comprovante.', 'error'); }
   };
 
-  const openPaymentModal = (appt: any) => {
+  const openPayModal = (appt: any) => {
     setSelectedAppt(appt);
-    setFormData({ method: 'CREDIT_CARD', discount: 0, installments: 1 });
-    onOpen();
+    setPayForm({ method: 'CREDIT_CARD', discount: 0, installments: 1 });
+    setShowPayModal(true);
   };
 
   const openRefundModal = (appt: any) => {
     setRefundAppt(appt);
     setRefundReason('');
-    onRefundOpen();
+    setShowRefundModal(true);
   };
 
-  const pending = appointments.filter(a => !a.payment && a.status !== 'CANCELED');
-  const paid = appointments.filter(a => a.payment && a.payment.status === 'PAID');
+  const StatusBadge = ({ status }: { status: string }) => {
+    if (status === 'COMPLETED') return <span className="badge badge-red">● Inadimplente</span>;
+    return <span className="badge badge-amber">● Pendente</span>;
+  };
 
   return (
-    <Box>
-      <Flex justify="space-between" align="center" mb={8}>
-        <Heading size="lg">Financeiro</Heading>
-      </Flex>
+    <div>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
+          background: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+          border: `1px solid ${toast.type === 'success' ? '#BBF7D0' : '#FECACA'}`,
+          color: toast.type === 'success' ? '#15803D' : '#B91C1C',
+          padding: '12px 16px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 500,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        }}>
+          {toast.msg}
+        </div>
+      )}
 
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
-        <Box bg={bg} p={6} borderRadius="xl" boxShadow="sm" borderTop="4px solid" borderColor="brand.500">
-          <Text color="gray.500" fontSize="sm" fontWeight="bold">FATURAMENTO MENSAL</Text>
-          <Heading size="xl" mt={2}>R$ {reports.monthly.toFixed(2)}</Heading>
-        </Box>
-        <Box bg={bg} p={6} borderRadius="xl" boxShadow="sm" borderTop="4px solid" borderColor="orange.400">
-          <Text color="gray.500" fontSize="sm" fontWeight="bold">PENDENTES</Text>
-          <Heading size="xl" mt={2}>{pending.length}</Heading>
-        </Box>
-        <Box bg={bg} p={6} borderRadius="xl" boxShadow="sm" borderTop="4px solid" borderColor="red.500">
-          <Text color="gray.500" fontSize="sm" fontWeight="bold">INADIMPLENTES</Text>
-          <Heading size="xl" mt={2} color="red.500">{defaulters.length}</Heading>
-        </Box>
-      </SimpleGrid>
+      {/* Metric cards */}
+      <div className="grid-3 mb-6">
+        <div className="metric-card green">
+          <div className="metric-card-info">
+            <div className="metric-card-label">Faturamento Mensal</div>
+            <div className="metric-card-value green">
+              R$ {reports.monthly.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+          </div>
+          <div className="metric-card-icon green"><DollarSign size={20} /></div>
+        </div>
+        <div className="metric-card amber">
+          <div className="metric-card-info">
+            <div className="metric-card-label">Pagamentos Pendentes</div>
+            <div className="metric-card-value amber">{pending.length}</div>
+          </div>
+          <div className="metric-card-icon amber"><AlertCircle size={20} /></div>
+        </div>
+        <div className="metric-card red">
+          <div className="metric-card-info">
+            <div className="metric-card-label">Pacientes Inadimplentes</div>
+            <div className="metric-card-value red">{defaulters.length}</div>
+          </div>
+          <div className="metric-card-icon red"><UserX size={20} /></div>
+        </div>
+      </div>
 
-      <Box bg={bg} borderRadius="xl" boxShadow="sm" mb={8}>
-        <Tabs colorScheme="brand" variant="enclosed" p={4}>
-          <TabList>
-            <Tab fontWeight="bold">Pendentes</Tab>
-            <Tab fontWeight="bold">Pagos</Tab>
-            <Tab fontWeight="bold">Relatórios</Tab>
-          </TabList>
+      {/* Tabs + table */}
+      <div className="card">
+        <div style={{ padding: '0 20px' }}>
+          <div className="tabs">
+            <button className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`} onClick={() => setActiveTab('pending')}>
+              Pendentes <span className="tab-count">{pending.length}</span>
+            </button>
+            <button className={`tab-btn ${activeTab === 'paid' ? 'active' : ''}`} onClick={() => setActiveTab('paid')}>
+              Pagos <span className="tab-count">{paid.length}</span>
+            </button>
+            <button className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
+              Relatórios
+            </button>
+          </div>
+        </div>
 
-          <TabPanels>
-            {/* Aba Pendentes */}
-            <TabPanel>
-              <Box overflowX="auto">
-                <Table variant="simple">
-                  <Thead>
-                    <Tr>
-                      <Th>Data</Th>
-                      <Th>Paciente</Th>
-                      <Th>Serviço</Th>
-                      <Th>Status</Th>
-                      <Th>Preço Base</Th>
-                      <Th>Ações</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {pending.length === 0 && <Tr><Td colSpan={6} textAlign="center">Nenhum pagamento pendente.</Td></Tr>}
-                    {pending.map(p => {
-                      const isDefaulter = p.status === 'COMPLETED';
-                      return (
-                      <Tr key={p.id}>
-                        <Td>{new Date(p.date).toLocaleDateString('pt-BR')}</Td>
-                        <Td>{p.patient.name}</Td>
-                        <Td>{p.serviceType}</Td>
-                        <Td>
-                          <Badge colorScheme={isDefaulter ? 'red' : 'orange'}>
-                            {isDefaulter ? 'Inadimplente' : 'Pendente'}
-                          </Badge>
-                        </Td>
-                        <Td>R$ {p.price?.toFixed(2) || '0.00'}</Td>
-                        <Td>
-                          <Button size="sm" colorScheme="green" leftIcon={<DollarSign size={16} />} onClick={() => openPaymentModal(p)}>
-                            Receber
-                          </Button>
-                        </Td>
-                      </Tr>
-                    )})}
-                  </Tbody>
-                </Table>
-              </Box>
-            </TabPanel>
+        {/* Pending Tab */}
+        {activeTab === 'pending' && (
+          pending.length === 0 ? <div className="empty-state">Nenhum pagamento pendente.</div> : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Paciente</th>
+                  <th>Serviço</th>
+                  <th>Status</th>
+                  <th>Valor</th>
+                  <th style={{ textAlign: 'right' }}>Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((p) => (
+                  <tr key={p.id}>
+                    <td>{new Date(p.date).toLocaleDateString('pt-BR')}</td>
+                    <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
+                    <td>{p.serviceType}</td>
+                    <td><StatusBadge status={p.status} /></td>
+                    <td>R$ {p.price?.toFixed(2) || '0,00'}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button className="btn btn-green btn-sm" onClick={() => openPayModal(p)}>
+                        <DollarSign size={13} /> Receber
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        )}
 
-            {/* Aba Pagos */}
-            <TabPanel>
-              <Box overflowX="auto">
-                <Table variant="simple">
-                  <Thead>
-                    <Tr>
-                      <Th>Data</Th>
-                      <Th>Paciente</Th>
-                      <Th>Serviço</Th>
-                      <Th>Valor Pago</Th>
-                      <Th>Ações</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {paid.length === 0 && <Tr><Td colSpan={5} textAlign="center">Nenhuma consulta paga encontrada.</Td></Tr>}
-                    {paid.map(p => (
-                      <Tr key={p.id}>
-                        <Td>{new Date(p.date).toLocaleDateString('pt-BR')}</Td>
-                        <Td>{p.patient.name}</Td>
-                        <Td>{p.serviceType}</Td>
-                        <Td fontWeight="bold" color="green.500">R$ {p.payment?.amount?.toFixed(2)}</Td>
-                        <Td>
-                          <HStack spacing={2}>
-                            <Button size="sm" colorScheme="teal" variant="outline" leftIcon={<MessageCircle size={16} />} onClick={() => handleSendReceipt(p.payment.id)}>
-                              Comprovante
-                            </Button>
-                            <Button size="sm" colorScheme="red" variant="outline" leftIcon={<RefreshCcw size={16} />} onClick={() => openRefundModal(p)}>
-                              Estornar
-                            </Button>
-                          </HStack>
-                        </Td>
-                      </Tr>
+        {/* Paid Tab */}
+        {activeTab === 'paid' && (
+          paid.length === 0 ? <div className="empty-state">Nenhuma consulta paga encontrada.</div> : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Paciente</th>
+                  <th>Serviço</th>
+                  <th>Valor Pago</th>
+                  <th style={{ textAlign: 'right' }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paid.map((p) => (
+                  <tr key={p.id}>
+                    <td>{new Date(p.date).toLocaleDateString('pt-BR')}</td>
+                    <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
+                    <td>{p.serviceType}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--green)' }}>
+                      R$ {p.payment?.amount?.toFixed(2)}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                        <button className="btn btn-outline btn-sm" onClick={() => handleSendReceipt(p.payment.id)}>
+                          <MessageCircle size={13} /> Comprovante
+                        </button>
+                        <button className="btn btn-outline-red btn-sm" onClick={() => openRefundModal(p)}>
+                          <RefreshCw size={13} /> Estornar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        )}
+
+        {/* Reports Tab */}
+        {activeTab === 'reports' && (
+          <div style={{ padding: '20px' }}>
+            <div className="grid-2">
+              {/* Resumo */}
+              <div>
+                <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>Resumo de Faturamento</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    { label: 'Faturamento Hoje', value: reports.daily },
+                    { label: 'Faturamento do Mês', value: reports.monthly },
+                    { label: 'Faturamento do Ano', value: reports.yearly },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="info-box" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 500, fontSize: '13.5px' }}>{label}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--green)' }}>
+                        R$ {value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Defaulters */}
+              <div>
+                <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--red)', marginBottom: '12px' }}>Relatório de Inadimplência</h3>
+                {defaulters.length === 0 ? (
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Nenhum paciente inadimplente.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '240px', overflowY: 'auto' }}>
+                    {defaulters.map((d) => (
+                      <div key={d.id} style={{
+                        padding: '12px', borderRadius: '8px', background: 'var(--red-bg)',
+                        borderLeft: '3px solid var(--red)', border: '1px solid var(--red-border)',
+                      }}>
+                        <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-primary)' }}>{d.patient.name}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          {d.serviceType} · R$ {d.price?.toFixed(2)} · {new Date(d.date).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
                     ))}
-                  </Tbody>
-                </Table>
-              </Box>
-            </TabPanel>
-
-            {/* Aba Relatórios */}
-            <TabPanel>
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
-                {/* Resumo Financeiro */}
-                <Box p={6} border="1px solid" borderColor="gray.200" borderRadius="md">
-                  <Heading size="md" mb={6}>Resumo de Faturamento</Heading>
-                  <VStack align="stretch" spacing={4}>
-                    <Flex justify="space-between" p={4} bg={cardBg} borderRadius="md">
-                      <Text fontWeight="bold">Faturamento Hoje</Text>
-                      <Text fontWeight="bold" color="green.500">R$ {reports.daily.toFixed(2)}</Text>
-                    </Flex>
-                    <Flex justify="space-between" p={4} bg={cardBg} borderRadius="md">
-                      <Text fontWeight="bold">Faturamento do Mês</Text>
-                      <Text fontWeight="bold" color="green.500">R$ {reports.monthly.toFixed(2)}</Text>
-                    </Flex>
-                    <Flex justify="space-between" p={4} bg={cardBg} borderRadius="md">
-                      <Text fontWeight="bold">Faturamento do Ano</Text>
-                      <Text fontWeight="bold" color="green.500">R$ {reports.yearly.toFixed(2)}</Text>
-                    </Flex>
-                  </VStack>
-                </Box>
-
-                {/* Relatório de Inadimplência */}
-                <Box p={6} border="1px solid" borderColor="gray.200" borderRadius="md">
-                  <Heading size="md" mb={6} color="red.500">Relatório de Inadimplência</Heading>
-                  {defaulters.length === 0 ? (
-                    <Text color="gray.500">Nenhum paciente inadimplente.</Text>
-                  ) : (
-                    <VStack align="stretch" spacing={3} maxH="300px" overflowY="auto">
-                      {defaulters.map(d => (
-                        <Box key={d.id} p={3} bg={cardBg} borderRadius="md" borderLeft="4px solid" borderColor="red.500">
-                          <Text fontWeight="bold">{d.patient.name}</Text>
-                          <Text fontSize="sm" color="gray.600">Serviço: {d.serviceType} | Valor: R$ {d.price?.toFixed(2)}</Text>
-                          <Text fontSize="xs" color="gray.500">Data: {new Date(d.date).toLocaleDateString('pt-BR')} - Tel: {d.patient.phone}</Text>
-                        </Box>
-                      ))}
-                    </VStack>
-                  )}
-                </Box>
-              </SimpleGrid>
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
-      </Box>
-
-      {/* Modal de Pagamento */}
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay backdropFilter="blur(4px)" />
-        <ModalContent>
-          <ModalHeader>Registrar Pagamento</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            {selectedAppt && (
-              <Flex direction="column" gap={4}>
-                <Box p={4} bg={cardBg} borderRadius="md">
-                  <Text fontWeight="bold">{selectedAppt.patient.name}</Text>
-                  <Text fontSize="sm" color="gray.500">Serviço: {selectedAppt.serviceType}</Text>
-                  <Text mt={2}>Preço Base: <b>R$ {selectedAppt.price?.toFixed(2) || '0.00'}</b></Text>
-                </Box>
-
-                <FormControl>
-                  <FormLabel>Desconto (%) - Máx 20% (Rec)</FormLabel>
-                  <Input type="number" min="0" max="100" value={formData.discount} onChange={e => setFormData({...formData, discount: Number(e.target.value)})} />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel>Método de Pagamento</FormLabel>
-                  <Select value={formData.method} onChange={e => setFormData({...formData, method: e.target.value})}>
-                    <option value="CREDIT_CARD">Cartão de Crédito</option>
-                    <option value="DEBIT_CARD">Cartão de Débito</option>
-                    <option value="PIX">PIX</option>
-                    <option value="CASH">Dinheiro</option>
-                  </Select>
-                </FormControl>
-
-                {formData.method === 'CREDIT_CARD' && (
-                  <FormControl>
-                    <FormLabel>Parcelas (Mínimo R$30 por parcela)</FormLabel>
-                    <Input type="number" min="1" max="12" value={formData.installments} onChange={e => setFormData({...formData, installments: Number(e.target.value)})} />
-                  </FormControl>
+                  </div>
                 )}
-              </Flex>
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose}>Cancelar</Button>
-            <Button colorScheme="green" onClick={handlePay} isLoading={loading}>Confirmar Pagamento</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* Modal de Estorno */}
-      <Modal isOpen={isRefundOpen} onClose={onRefundClose}>
-        <ModalOverlay backdropFilter="blur(4px)" />
-        <ModalContent>
-          <ModalHeader>Estornar Pagamento</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            {refundAppt && (
-              <Flex direction="column" gap={4}>
-                <Box p={4} bg="red.50" borderRadius="md" color="red.800">
-                  <Text fontWeight="bold">Atenção!</Text>
-                  <Text fontSize="sm">Você está prestes a estornar o pagamento de <b>R$ {refundAppt.payment?.amount?.toFixed(2)}</b> do paciente <b>{refundAppt.patient.name}</b>.</Text>
-                </Box>
-                <FormControl isRequired>
-                  <FormLabel>Justificativa do Estorno</FormLabel>
-                  <Textarea 
-                    placeholder="Descreva o motivo do estorno..." 
-                    value={refundReason} 
-                    onChange={e => setRefundReason(e.target.value)} 
-                  />
-                </FormControl>
-              </Flex>
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onRefundClose}>Cancelar</Button>
-            <Button colorScheme="red" onClick={handleRefund} isLoading={loading}>Confirmar Estorno</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Pay Modal */}
+      {showPayModal && selectedAppt && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowPayModal(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <span className="modal-title">Registrar Pagamento</span>
+              <button className="modal-close" onClick={() => setShowPayModal(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="info-box">
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>{selectedAppt.patient.name}</div>
+                <div className="text-sm text-muted">Serviço: {selectedAppt.serviceType}</div>
+                <div style={{ marginTop: '8px', fontSize: '13.5px' }}>
+                  Preço Base: <strong>R$ {selectedAppt.price?.toFixed(2) || '0,00'}</strong>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Desconto (%) — máx. recomendado: 20%</label>
+                <input type="number" className="form-input" min="0" max="100" value={payForm.discount}
+                  onChange={(e) => setPayForm({ ...payForm, discount: Number(e.target.value) })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Método de Pagamento *</label>
+                <select className="form-select" value={payForm.method}
+                  onChange={(e) => setPayForm({ ...payForm, method: e.target.value })}>
+                  <option value="CREDIT_CARD">Cartão de Crédito</option>
+                  <option value="DEBIT_CARD">Cartão de Débito</option>
+                  <option value="PIX">PIX</option>
+                  <option value="CASH">Dinheiro</option>
+                </select>
+              </div>
+              {payForm.method === 'CREDIT_CARD' && (
+                <div className="form-group">
+                  <label className="form-label">Parcelas (mín. R$30/parcela)</label>
+                  <input type="number" className="form-input" min="1" max="12" value={payForm.installments}
+                    onChange={(e) => setPayForm({ ...payForm, installments: Number(e.target.value) })} />
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setShowPayModal(false)}>Cancelar</button>
+              <button className="btn btn-green" onClick={handlePay} disabled={loading}>
+                {loading ? 'Confirmando...' : 'Confirmar Pagamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-    </Box>
+      {/* Refund Modal */}
+      {showRefundModal && refundAppt && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowRefundModal(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <span className="modal-title">Estornar Pagamento</span>
+              <button className="modal-close" onClick={() => setShowRefundModal(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="alert-box alert-red">
+                <strong>Atenção!</strong> Você está prestes a estornar o pagamento de{' '}
+                <strong>R$ {refundAppt.payment?.amount?.toFixed(2)}</strong> do paciente{' '}
+                <strong>{refundAppt.patient.name}</strong>.
+              </div>
+              <div className="form-group">
+                <label className="form-label">Justificativa do Estorno *</label>
+                <textarea
+                  className="form-textarea"
+                  placeholder="Descreva o motivo do estorno..."
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setShowRefundModal(false)}>Cancelar</button>
+              <button className="btn btn-red" onClick={handleRefund} disabled={loading}>
+                {loading ? 'Processando...' : 'Confirmar Estorno'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
