@@ -1,0 +1,103 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tenant {
+  id        String    @id @default(uuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  users     User[]
+  patients  Patient[]
+  dentists  Dentist[]
+  appointments Appointment[]
+  payments  Payment[]
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  tenantId            String
+  tenant              Tenant    @relation(fields: [tenantId], references: [id])
+  name                String
+  email               String    @unique
+  password            String
+  role                String    @default("RECEPTIONIST") // ADMIN, RECEPTIONIST, DENTIST
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model Patient {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  name          String
+  cpf           String
+  dateOfBirth   DateTime
+  phone         String
+  email         String?
+  address       String?
+  clinicalNotes String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  appointments  Appointment[]
+
+  @@unique([tenantId, cpf]) // CPF is unique within a tenant
+}
+
+model Dentist {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  name        String
+  cro         String
+  specialties String?
+  phone       String
+  email       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  appointments Appointment[]
+}
+
+model Appointment {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id])
+  patientId          String
+  patient            Patient  @relation(fields: [patientId], references: [id])
+  dentistId          String
+  dentist            Dentist  @relation(fields: [dentistId], references: [id])
+  date               DateTime
+  durationInMinutes  Int
+  serviceType        String
+  price              Float    @default(0.0)
+  status             String   @default("SCHEDULED") // SCHEDULED, CONFIRMED, CANCELED, COMPLETED, NO_SHOW
+  cancellationReason String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  payment            Payment?
+}
+
+model Payment {
+  id             String      @id @default(uuid())
+  tenantId       String
+  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+  appointmentId  String      @unique
+  appointment    Appointment @relation(fields: [appointmentId], references: [id])
+  amount         Float
+  method         String      // PIX, CREDIT_CARD, DEBIT_CARD, CASH
+  status         String      @default("PENDING") // PENDING, PAID, REFUNDED
+  discount       Float       @default(0)
+  installments   Int         @default(1)
+  refundReason   String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}

@@ -1,0 +1,2493 @@
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+BOT PARA CLÍNICA 
+ODONTOLÓGICA
+Documentação de Requisitos de Software
+
+Versão 1.0  |  2026
+
+Versão 1.0  |  2026
+
+Página 1
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Sumário
+
+1  Introdução
+2  Visão Geral do Sistema
+3  Requisitos Funcionais (RF)
+3.1  Módulo de Pacientes
+3.2  Módulo de Agenda
+3.3  Módulo do Bot de Atendimento
+3.4  Módulo WhatsApp
+3.5  Módulo Financeiro
+3.6  Módulo de Dentistas
+3.7  Módulo de Dashboard e Relatórios
+3.8  Módulo de Automações
+3.9  Módulo de Segurança e Acesso
+3.10  Módulo de Funcionalidades Premium
+4  Requisitos Não Funcionais (RNF)
+5  Regras de Negócio (RG)
+6  Pacotes e Precificação
+7  Estimativa de Mercado
+
+3
+3
+4
+4
+5
+6
+7
+8
+9
+9
+10
+11
+11
+12
+14
+17
+18
+
+Versão 1.0  |  2026
+
+Página 2
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+1. Introdução
+
+Este documento descreve os requisitos funcionais, não funcionais e as regras de negócio do Bot 
+para Clínica Odontológica — um sistema de automação voltado para modernizar a gestão de 
+clínicas odontológicas de pequeno, médio e grande porte, além de consultórios individuais.
+
+O   sistema   tem   como   propósito   automatizar   a   comunicação   entre   a   clínica   e   seus   pacientes, 
+oferecendo   agendamento   online,   lembretes   automáticos,   pagamentos   integrados,   pré-triagem 
+digital e painel de gestão, reduzindo faltas, custos administrativos e aumentando a satisfação dos 
+pacientes.
+
+1.1 Escopo
+
+O software contempla os seguintes módulos principais:
+
+• Módulo de Pacientes
+• Módulo de Agenda
+• Módulo do Bot de Atendimento
+• Módulo WhatsApp
+• Módulo Financeiro
+• Módulo de Dentistas
+• Módulo de Dashboard e Relatórios
+• Módulo de Automações
+• Módulo de Segurança e Acesso
+• Módulo de Funcionalidades Premium (opcionais)
+
+1.2 Público-Alvo
+
+O sistema é destinado a clínicas odontológicas de pequeno, médio e grande porte, bem como 
+consultórios individuais que desejam modernizar seus processos administrativos, reduzir custos 
+com atendimento humano e proporcionar uma experiência diferenciada a seus pacientes.
+
+Versão 1.0  |  2026
+
+Página 3
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+2. Visão Geral do Sistema
+
+O Bot para Clínica Odontológica é uma plataforma SaaS (Software as a Service) multitenant que 
+integra canais de comunicação (WhatsApp, SMS, e-mail) com um painel de gestão administrativo 
+completo, permitindo que a clínica controle toda a jornada do paciente — desde o primeiro contato 
+até o pós-atendimento.
+
+Atributo
+
+Descrição
+
+Nome do Sistema
+
+Bot Clínica Odontológica
+
+Tipo
+
+Plataformas
+
+SaaS Web + Integração WhatsApp
+
+Web (responsivo), WhatsApp, SMS
+
+Modelo de Negócio
+
+Licença única + Mensalidade recorrente
+
+Versão do Documento
+
+Data
+
+1.0
+
+2026
+
+Versão 1.0  |  2026
+
+Página 4
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+3. Requisitos Funcionais (RF)
+
+Os requisitos funcionais descrevem todas as funcionalidades que o sistema deve oferecer. Cada 
+requisito é identificado por um código único no formato RF-XXX.
+
+3.1 Módulo de Pacientes
+
+Códig
+o
+
+RF-001
+
+RF-002
+
+RF-003
+
+RF-004
+
+RF-005
+
+RF-006
+
+RF-007
+
+RF-008
+
+RF-009
+
+RF-010
+
+Requisito
+
+O sistema deve permitir o cadastro completo do 
+paciente, incluindo nome completo, CPF, data de 
+nascimento, telefone, e-mail e endereço.
+
+Priorida
+de
+
+Pacote
+
+Alta
+
+Básico
+
+O sistema deve validar o CPF do paciente no momento 
+do cadastro, evitando duplicidade.
+
+O sistema deve permitir a edição dos dados cadastrais 
+do paciente.
+
+Alta
+
+Alta
+
+Básico
+
+Básico
+
+O sistema deve permitir a inativação/exclusão lógica 
+de pacientes.
+
+Média
+
+Básico
+
+O sistema deve exibir o histórico completo de 
+consultas realizadas pelo paciente.
+
+O sistema deve exibir as consultas futuras agendadas 
+para o paciente.
+
+O sistema deve permitir o registro de procedimentos 
+realizados no paciente.
+
+O sistema deve permitir que o dentista registre 
+anotações clínicas vinculadas ao paciente.
+
+O sistema deve suportar busca de pacientes por nome, 
+CPF ou telefone.
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Pro
+
+Básico
+
+Pro
+
+Pro
+
+Básico
+
+O sistema deve exibir a lista geral de pacientes com 
+paginação e filtros.
+
+Média
+
+Básico
+
+3.2 Módulo de Agenda
+
+Códig
+o
+
+RF-011
+
+RF-012
+
+Requisito
+
+O sistema deve permitir o agendamento de consultas 
+com seleção de serviço, profissional, data e horário.
+
+O sistema deve exibir apenas os horários disponíveis 
+de acordo com a agenda do dentista.
+
+Priorida
+de
+
+Pacote
+
+Alta
+
+Alta
+
+Básico
+
+Básico
+
+Versão 1.0  |  2026
+
+Página 5
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Códig
+o
+
+RF-013
+
+RF-014
+
+RF-015
+
+RF-016
+
+Requisito
+
+Priorida
+de
+
+Pacote
+
+O sistema deve permitir o reagendamento de consultas 
+existentes.
+
+O sistema deve permitir o cancelamento de consultas, 
+com registro do motivo.
+
+O sistema deve permitir a confirmação de consultas 
+pelo paciente via WhatsApp.
+
+O sistema deve exibir a agenda diária de consultas 
+para cada dentista.
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Básico
+
+Básico
+
+Básico
+
+Básico
+
+RF-017
+
+O sistema deve exibir a agenda semanal de consultas.
+
+Média
+
+Básico
+
+RF-018
+
+O sistema deve exibir a agenda mensal de consultas.
+
+Média
+
+Pro
+
+RF-019
+
+RF-020
+
+RF-021
+
+RF-022
+
+RF-023
+
+RF-024
+
+O sistema deve permitir o bloqueio de horários 
+específicos na agenda do dentista.
+
+O sistema deve permitir o registro de férias e 
+ausências do dentista.
+
+O sistema deve permitir a configuração do tempo de 
+duração de cada tipo de consulta.
+
+O sistema deve impedir agendamentos conflitantes no 
+mesmo horário e dentista.
+
+O sistema deve registrar o status de cada consulta: 
+agendada, confirmada, cancelada, realizada, falta.
+
+O sistema deve enviar comprovante de agendamento 
+ao paciente via WhatsApp.
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Básico
+
+Pro
+
+Pro
+
+Básico
+
+Básico
+
+Básico
+
+Versão 1.0  |  2026
+
+Página 6
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+3.3 Módulo do Bot de Atendimento
+
+Códig
+o
+
+RF-025
+
+RF-026
+
+RF-027
+
+RF-028
+
+RF-029
+
+RF-030
+
+RF-031
+
+RF-032
+
+RF-033
+
+RF-034
+
+RF-035
+
+RF-036
+
+RF-037
+
+RF-038
+
+Requisito
+
+Priorida
+de
+
+Pacote
+
+O bot deve iniciar o atendimento com saudação 
+personalizada ao paciente.
+
+O bot deve identificar o paciente pelo número de 
+telefone ou CPF informado.
+
+O bot deve oferecer um menu de opções ao paciente: 
+agendar, reagendar, cancelar, FAQ.
+
+O bot deve responder automaticamente perguntas 
+frequentes sobre horário de funcionamento.
+
+O bot deve responder automaticamente sobre o 
+endereço da clínica.
+
+O bot deve responder automaticamente sobre as 
+formas de pagamento aceitas.
+
+O bot deve responder automaticamente sobre 
+convênios atendidos pela clínica.
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Básico
+
+Básico
+
+Básico
+
+Básico
+
+Básico
+
+Básico
+
+Básico
+
+O bot deve responder automaticamente sobre valores 
+e tabela de procedimentos.
+
+Média
+
+Pro
+
+O bot deve conduzir o fluxo de agendamento com 
+seleção de serviço, profissional, data e horário.
+
+O bot deve confirmar o agendamento ao paciente com 
+resumo da consulta.
+
+O bot deve identificar mensagens fora do fluxo e 
+direcionar para atendente humano.
+
+O bot deve transferir o atendimento para um operador 
+humano mediante solicitação do paciente.
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Básico
+
+Básico
+
+Pro
+
+Pro
+
+O bot deve suportar múltiplos idiomas: Português, 
+Inglês e Espanhol.
+
+Baixa
+
+Premium
+
+O bot deve registrar o log de todos os atendimentos 
+realizados.
+
+Alta
+
+Pro
+
+3.4 Módulo WhatsApp
+
+Códig
+o
+
+RF-039
+
+RF-040
+
+Requisito
+
+O sistema deve integrar-se à API Oficial do WhatsApp 
+Business.
+
+O sistema deve enviar lembretes automáticos de 
+consulta 24 horas antes.
+
+Priorida
+de
+
+Pacote
+
+Alta
+
+Alta
+
+Premium
+
+Básico
+
+Versão 1.0  |  2026
+
+Página 7
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Códig
+o
+
+RF-041
+
+RF-042
+
+RF-043
+
+RF-044
+
+RF-045
+
+RF-046
+
+RF-047
+
+RF-048
+
+Requisito
+
+Priorida
+de
+
+Pacote
+
+O sistema deve enviar lembretes automáticos de 
+consulta 2 horas antes.
+
+O sistema deve enviar confirmação de agendamento 
+imediatamente após o agendamento.
+
+O sistema deve enviar notificação de cancelamento ao 
+paciente.
+
+Alta
+
+Alta
+
+Alta
+
+Básico
+
+Básico
+
+Básico
+
+O sistema deve enviar comprovante de pagamento ao 
+paciente.
+
+Média
+
+Pro
+
+O sistema deve permitir o envio de campanhas de 
+marketing para grupos de pacientes.
+
+Média
+
+Premium
+
+O sistema deve permitir o envio de promoções e 
+notícias da clínica via WhatsApp.
+
+Baixa
+
+Premium
+
+O sistema deve registrar o status de entrega de cada 
+mensagem enviada.
+
+Média
+
+Pro
+
+O sistema deve permitir o agendamento de envio de 
+mensagens em data e hora específicas.
+
+Média
+
+Premium
+
+Versão 1.0  |  2026
+
+Página 8
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+3.5 Módulo Financeiro
+
+Códig
+o
+
+RF-049
+
+Requisito
+
+Priorida
+de
+
+Pacote
+
+O sistema deve permitir o registro de pagamentos 
+vinculados a consultas.
+
+RF-050
+
+O sistema deve suportar pagamentos via Pix.
+
+RF-051
+
+RF-052
+
+RF-053
+
+RF-054
+
+O sistema deve suportar pagamentos via cartão de 
+crédito e débito.
+
+O sistema deve suportar registro de pagamentos em 
+dinheiro.
+
+O sistema deve exibir a lista de consultas pagas e 
+pendentes de pagamento.
+
+O sistema deve permitir o registro do valor de cada 
+procedimento.
+
+RF-055
+
+O sistema deve gerar relatório de faturamento diário.
+
+RF-056
+
+O sistema deve gerar relatório de faturamento mensal.
+
+RF-057
+
+O sistema deve gerar relatório de faturamento anual.
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Pro
+
+Pro
+
+Pro
+
+Pro
+
+Pro
+
+Pro
+
+Pro
+
+Pro
+
+Premium
+
+RF-058
+
+RF-059
+
+RF-060
+
+O sistema deve permitir o parcelamento de 
+procedimentos em múltiplas parcelas.
+
+Média
+
+Premium
+
+O sistema deve registrar descontos concedidos sobre 
+procedimentos.
+
+Média
+
+Pro
+
+O sistema deve gerar relatório de inadimplência de 
+pacientes.
+
+Média
+
+Premium
+
+3.6 Módulo de Dentistas
+
+Códig
+o
+
+RF-061
+
+RF-062
+
+RF-063
+
+RF-064
+
+Requisito
+
+Priorida
+de
+
+Pacote
+
+O sistema deve permitir o cadastro de dentistas com 
+nome, CRO, especialidade, telefone e e-mail.
+
+O sistema deve permitir o cadastro de múltiplos 
+dentistas na mesma clínica.
+
+O sistema deve permitir a configuração de horários de 
+atendimento para cada dentista.
+
+O sistema deve exibir a agenda diária de consultas do 
+dentista.
+
+RF-065
+
+O sistema deve exibir as consultas futuras do dentista.
+
+RF-066
+
+O sistema deve enviar um resumo diário ao dentista 
+via WhatsApp.
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Básico
+
+Básico
+
+Básico
+
+Básico
+
+Básico
+
+Premium
+
+Versão 1.0  |  2026
+
+Página 9
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Códig
+o
+
+Requisito
+
+Priorida
+de
+
+Pacote
+
+RF-067
+
+O sistema deve permitir a inativação de dentistas.
+
+Média
+
+Básico
+
+Versão 1.0  |  2026
+
+Página 10
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+3.7 Módulo de Dashboard e Relatórios
+
+Códig
+o
+
+RF-068
+
+Requisito
+
+Priorida
+de
+
+Pacote
+
+O dashboard deve exibir o total de pacientes 
+cadastrados.
+
+RF-069
+
+O dashboard deve exibir o total de consultas do dia.
+
+RF-070
+
+O dashboard deve exibir o total de consultas da 
+semana.
+
+RF-071
+
+O dashboard deve exibir o total de consultas do mês.
+
+RF-072
+
+O dashboard deve exibir o total de cancelamentos.
+
+RF-073
+
+O dashboard deve exibir o total de faltas (no-show).
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+RF-074
+
+O sistema deve exibir gráfico de consultas por mês.
+
+Média
+
+RF-075
+
+O sistema deve exibir gráfico de faturamento mensal.
+
+Média
+
+Básico
+
+Básico
+
+Básico
+
+Pro
+
+Pro
+
+Pro
+
+Pro
+
+Pro
+
+RF-076
+
+RF-077
+
+RF-078
+
+RF-079
+
+O sistema deve exibir gráfico de novos pacientes por 
+mês.
+
+Média
+
+Premium
+
+O sistema deve gerar relatório de desempenho da 
+clínica com indicadores avançados.
+
+Média
+
+Premium
+
+O sistema deve permitir a exportação de relatórios em 
+PDF e Excel.
+
+Média
+
+Premium
+
+O sistema deve registrar a taxa de conversão de 
+pacientes novos.
+
+Baixa
+
+Premium
+
+3.8 Módulo de Automações
+
+Códig
+o
+
+RF-080
+
+RF-081
+
+RF-082
+
+RF-083
+
+RF-084
+
+RF-085
+
+Requisito
+
+Priorida
+de
+
+Pacote
+
+O sistema deve enviar lembrete automático 24 horas 
+antes da consulta.
+
+O sistema deve enviar lembrete automático 2 horas 
+antes da consulta.
+
+O sistema deve enviar pesquisa de satisfação após a 
+realização da consulta.
+
+Alta
+
+Alta
+
+Alta
+
+Básico
+
+Básico
+
+Pro
+
+O sistema deve solicitar avaliação no Google após a 
+consulta.
+
+Média
+
+Pro
+
+O sistema deve enviar mensagem automática de 
+retorno após 6 meses.
+
+O sistema deve enviar mensagem automática de 
+retorno após 1 ano.
+
+Alta
+
+Alta
+
+Pro
+
+Pro
+
+Versão 1.0  |  2026
+
+Página 11
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Códig
+o
+
+RF-086
+
+RF-087
+
+Requisito
+
+O sistema deve enviar mensagem em datas 
+comemorativas (aniversário do paciente).
+
+O sistema deve enviar alerta quando um paciente 
+estiver com consulta há mais de 12 meses sem 
+retorno.
+
+Priorida
+de
+
+Pacote
+
+Baixa
+
+Premium
+
+Média
+
+Premium
+
+RF-088
+
+O sistema deve registrar respostas de pesquisas de 
+satisfação e exibir nota média.
+
+Média
+
+Pro
+
+Versão 1.0  |  2026
+
+Página 12
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+3.9 Módulo de Segurança e Acesso
+
+Requisito
+
+Priorida
+de
+
+Pacote
+
+Códig
+o
+
+RF-089
+
+RF-090
+
+RF-091
+
+RF-092
+
+RF-094
+
+RF-095
+
+RF-096
+
+O sistema deve exigir autenticação com login e senha 
+para acesso ao painel.
+
+O sistema deve armazenar senhas criptografadas com 
+algoritmo seguro (bcrypt/Argon2).
+
+O sistema deve oferecer controle de acesso por perfil: 
+Administrador, Recepcionista, Dentista.
+
+O sistema deve registrar log de todas as atividades de 
+usuários.
+
+RF-093
+
+O sistema deve realizar backup automático dos dados.
+
+O sistema deve permitir a recuperação de senha via e-
+mail.
+
+O sistema deve bloquear o acesso após 5 tentativas 
+de login incorretas.
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Alta
+
+Básico
+
+Básico
+
+Básico
+
+Pro
+
+Pro
+
+Básico
+
+Pro
+
+O sistema deve suportar autenticação em dois fatores 
+(2FA) para o administrador.
+
+Média
+
+Premium
+
+3.10 Módulo de Funcionalidades Premium
+
+Códig
+o
+
+RF-097
+
+RF-098
+
+RF-099
+
+RF-100
+
+RF-101
+
+RF-102
+
+RF-103
+
+RF-104
+
+Requisito
+
+O sistema deve integrar IA generativa 
+(ChatGPT/Claude) para responder pacientes de forma 
+avançada.
+
+O sistema deve permitir integração com Instagram 
+Direct para atendimento.
+
+O sistema deve permitir integração com Facebook 
+Messenger.
+
+O sistema deve integrar com Google Calendar para 
+sincronização de agenda.
+
+O sistema deve suportar assinatura digital de 
+documentos.
+
+O sistema deve gerar relatórios analíticos com apoio 
+de IA.
+
+O sistema deve suportar gestão de múltiplas unidades 
+(clínicas).
+
+O sistema deve possuir aplicativo mobile para iOS e 
+Android.
+
+Priorida
+de
+
+Baixa
+
+Baixa
+
+Baixa
+
+Baixa
+
+Baixa
+
+Baixa
+
+Média
+
+Baixa
+
+Pacote
+
+Premium
++
+
+Premium
++
+
+Premium
++
+
+Premium
++
+
+Premium
++
+
+Premium
++
+
+Premium
++
+
+Premium
++
+
+Versão 1.0  |  2026
+
+Página 13
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Códig
+o
+
+RF-105
+
+RF-106
+
+Requisito
+
+O sistema deve suportar teleconsulta (videochamada 
+integrada).
+
+O sistema deve reconhecer comandos de voz do 
+paciente no atendimento.
+
+Priorida
+de
+
+Pacote
+
+Baixa
+
+Baixa
+
+Premium
++
+
+Premium
++
+
+Versão 1.0  |  2026
+
+Página 14
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+4. Requisitos Não Funcionais (RNF)
+
+Os requisitos não funcionais definem as qualidades e restrições que o sistema deve respeitar para 
+garantir desempenho, segurança, manutenibilidade e boa experiência de uso. Cada requisito é 
+identificado por código no formato RNF-XXX.
+
+4.1 Desempenho
+
+Código
+
+RNF-001
+
+RNF-002
+
+RNF-003
+
+RNF-004
+
+RNF-005
+
+RNF-006
+
+Requisito
+
+O sistema deve responder a requisições da interface web em no 
+máximo 2 segundos para operações comuns.
+
+Categoria
+
+Desempenho
+
+O bot deve responder ao paciente via WhatsApp em no máximo 3 
+segundos após receber a mensagem.
+
+Desempenho
+
+O sistema deve suportar no mínimo 50 atendimentos simultâneos 
+no plano Básico.
+
+Escalabilidade
+
+O sistema deve suportar no mínimo 200 atendimentos simultâneos 
+no plano Premium.
+
+Escalabilidade
+
+O dashboard deve carregar em no máximo 3 segundos mesmo com 
+grandes volumes de dados.
+
+Desempenho
+
+O envio de lembretes automáticos deve ocorrer com atraso máximo 
+de 5 minutos em relação ao horário programado.
+
+Desempenho
+
+4.2 Segurança
+
+Código
+
+RNF-007
+
+RNF-008
+
+RNF-009
+
+RNF-010
+
+RNF-011
+
+RNF-012
+
+RNF-013
+
+Requisito
+
+Toda comunicação entre cliente e servidor deve utilizar protocolo 
+HTTPS com TLS 1.2 ou superior.
+
+Os dados sensíveis dos pacientes devem ser armazenados com 
+criptografia AES-256 em repouso.
+
+As senhas dos usuários não devem ser armazenadas em texto 
+plano; utilizar hash bcrypt com salt.
+
+Categoria
+
+Segurança
+
+Segurança
+
+Segurança
+
+O sistema deve estar em conformidade com a LGPD (Lei Geral de 
+Proteção de Dados — Lei 13.709/2018).
+
+Conformidade
+
+O sistema deve registrar logs de auditoria imutáveis para todas as 
+operações sensíveis.
+
+O sistema deve realizar backup automático diário com retenção 
+mínima de 30 dias.
+
+O acesso ao painel administrativo deve ser protegido por controle 
+de sessão com timeout de 30 minutos.
+
+Segurança
+
+Segurança
+
+Segurança
+
+Versão 1.0  |  2026
+
+Página 15
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Código
+
+RNF-014
+
+Requisito
+
+As credenciais de integração com WhatsApp Business API não 
+devem ser expostas no frontend.
+
+Categoria
+
+Segurança
+
+Versão 1.0  |  2026
+
+Página 16
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+4.3 Disponibilidade e Confiabilidade
+
+Código
+
+RNF-015
+
+RNF-016
+
+RNF-017
+
+RNF-018
+
+RNF-019
+
+Requisito
+
+O sistema deve ter disponibilidade mínima de 99,5% (SLA) em 
+ambientes de produção.
+
+Categoria
+
+Disponibilidade
+
+O sistema deve possuir mecanismo de failover automático em caso 
+de falha do servidor principal.
+
+Confiabilidade
+
+Em caso de indisponibilidade do WhatsApp API, o sistema deve 
+registrar as mensagens na fila e retentar o envio automaticamente.
+
+Confiabilidade
+
+O sistema deve possuir monitoramento de uptime com alertas 
+automáticos para a equipe técnica.
+
+Disponibilidade
+
+O tempo máximo de recuperação após falha grave (RTO) deve ser 
+inferior a 4 horas.
+
+Confiabilidade
+
+4.4 Usabilidade
+
+Código
+
+RNF-020
+
+RNF-021
+
+RNF-022
+
+RNF-023
+
+RNF-024
+
+Requisito
+
+A interface do painel administrativo deve ser responsiva, 
+adaptando-se a dispositivos móveis, tablets e desktops.
+
+O fluxo de agendamento pelo bot não deve exigir mais de 5 
+interações do paciente.
+
+O sistema deve exibir mensagens de erro claras e em linguagem 
+acessível ao usuário não técnico.
+
+Categoria
+
+Usabilidade
+
+Usabilidade
+
+Usabilidade
+
+A interface deve seguir os princípios de acessibilidade WCAG 2.1 
+nível AA.
+
+Acessibilidade
+
+O tempo médio de aprendizado do painel por recepcionistas sem 
+experiência técnica deve ser inferior a 2 horas.
+
+Usabilidade
+
+4.5 Manutenibilidade e Escalabilidade
+
+Código
+
+RNF-025
+
+RNF-026
+
+RNF-027
+
+RNF-028
+
+Requisito
+
+O código-fonte deve seguir padrões de documentação e ter 
+cobertura mínima de 70% por testes automatizados.
+
+Categoria
+
+Manutenibilidade
+
+A arquitetura deve ser modular, permitindo adição de novos canais 
+de comunicação sem refatoração do núcleo.
+
+Manutenibilidade
+
+O sistema deve suportar escalabilidade horizontal (adição de 
+servidores) sem alteração de código.
+
+Escalabilidade
+
+O banco de dados deve suportar multi-tenant para isolar os dados 
+de diferentes clínicas clientes.
+
+Escalabilidade
+
+RNF-029
+
+Atualizações do sistema devem ser realizadas via deployment sem 
+
+Manutenibilidade
+
+Versão 1.0  |  2026
+
+Página 17
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Código
+
+Requisito
+
+Categoria
+
+downtime (zero-downtime deploy).
+
+RNF-030
+
+O sistema deve ser containerizado com Docker para facilitar deploy 
+e portabilidade.
+
+Manutenibilidade
+
+4.6 Integração
+
+Código
+
+RNF-031
+
+RNF-032
+
+RNF-033
+
+RNF-034
+
+RNF-035
+
+Requisito
+
+A integração com a API do WhatsApp Business deve utilizar a API 
+oficial Meta (não soluções não oficiais).
+
+Categoria
+
+Integração
+
+A integração com gateways de pagamento (Pix, cartão) deve ser 
+realizada via API certificada pelo Banco Central.
+
+Integração
+
+O sistema deve expor API REST documentada (Swagger/OpenAPI) 
+para integrações de terceiros.
+
+Integração
+
+Webhooks de eventos (novo agendamento, cancelamento, 
+pagamento) devem ser implementados para integração externa.
+
+A integração com e-mail (SMTP) deve ser suportada como canal 
+alternativo ao WhatsApp.
+
+Integração
+
+Integração
+
+Versão 1.0  |  2026
+
+Página 18
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+5. Regras de Negócio (RG)
+
+As   regras   de   negócio   definem   as   restrições,   políticas   e   comportamentos   que   o   sistema   deve 
+respeitar   para   atender   às   necessidades   operacionais   da   clínica   odontológica.   Cada   regra   é 
+identificada pelo código RG-XXX.
+
+5.1 Regras de Agendamento
+
+Código
+
+RG-001
+
+RG-002
+
+RG-003
+
+RG-004
+
+RG-005
+
+RG-006
+
+RG-007
+
+RG-008
+
+RG-009
+
+RG-010
+
+Regra de Negócio
+
+Não é permitido o agendamento de duas consultas para o mesmo dentista no mesmo 
+horário.
+
+O intervalo mínimo entre consultas deve ser configurável por tipo de procedimento 
+(padrão: 30 minutos).
+
+Agendamentos só podem ser realizados em horários dentro da grade de 
+disponibilidade cadastrada do dentista.
+
+Não é permitido agendar consultas em datas bloqueadas ou em períodos de férias do 
+dentista.
+
+O paciente pode reagendar a consulta sem custo adicional com antecedência mínima 
+de 24 horas.
+
+Cancelamentos com menos de 24 horas de antecedência devem ser registrados 
+como 'cancelamento tardio'.
+
+Pacientes com 3 ou mais cancelamentos tardios nos últimos 6 meses podem ser 
+sinalizados com alerta no sistema.
+
+O sistema deve permitir agendamentos de até 90 dias no futuro.
+
+O número máximo de agendamentos por paciente simultâneos é configurável pela 
+clínica (padrão: 2 consultas abertas).
+
+Consultas não confirmadas até 1 hora antes do horário agendado devem ser 
+notificadas para a recepção.
+
+5.2 Regras de Cancelamento e No-Show
+
+Código
+
+RG-011
+
+RG-012
+
+RG-013
+
+RG-014
+
+Regra de Negócio
+
+Consulta cancelada pelo paciente deve ter o horário liberado automaticamente na 
+agenda do dentista.
+
+Consulta marcada como 'falta' (no-show) deve ser registrada no histórico do paciente.
+
+O sistema deve enviar mensagem de reengajamento para pacientes que faltaram, 
+oferecendo novo agendamento.
+
+Após 3 faltas consecutivas sem justificativa, o sistema deve sinalizar o paciente para 
+análise da recepção.
+
+Versão 1.0  |  2026
+
+Página 19
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Código
+
+RG-015
+
+Regra de Negócio
+
+O status de cancelamento deve ser registrado com data, hora e responsável pelo 
+cancelamento (paciente ou clínica).
+
+Versão 1.0  |  2026
+
+Página 20
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+5.3 Regras Financeiras
+
+Código
+
+RG-016
+
+RG-017
+
+RG-018
+
+RG-019
+
+RG-020
+
+RG-021
+
+RG-022
+
+RG-023
+
+RG-024
+
+RG-025
+
+Regra de Negócio
+
+O valor da consulta deve ser vinculado ao tipo de procedimento e pode variar por 
+dentista.
+
+Descontos só podem ser aplicados por usuário com perfil Administrador ou Dentista.
+
+O desconto máximo permitido sem aprovação adicional é configurável pela clínica 
+(padrão: 20%).
+
+O pagamento deve ser registrado com o método utilizado (Pix, cartão, dinheiro) e 
+respectiva data/hora.
+
+Parcelamentos no cartão de crédito devem obedecer ao mínimo de R$ 30,00 por 
+parcela.
+
+Consultas pagas não podem ser excluídas do sistema; apenas estornadas com 
+registro de justificativa.
+
+O sistema deve calcular automaticamente o faturamento total do período selecionado.
+
+Relatórios financeiros com valores acima de R$ 10.000 devem exigir autenticação do 
+administrador para exportação.
+
+O sistema não deve armazenar dados completos de cartão de crédito (conformidade 
+PCI-DSS).
+
+Comprovante de pagamento deve ser gerado automaticamente e disponibilizado ao 
+paciente via WhatsApp.
+
+5.4 Regras do Bot de Atendimento
+
+Código
+
+RG-026
+
+RG-027
+
+RG-028
+
+RG-029
+
+RG-030
+
+RG-031
+
+RG-032
+
+RG-033
+
+Regra de Negócio
+
+O bot deve identificar o paciente antes de realizar qualquer operação de 
+agendamento.
+
+O bot deve encerrar atendimentos inativos após 15 minutos sem resposta do 
+paciente.
+
+Após 3 mensagens não reconhecidas consecutivas, o bot deve transferir 
+automaticamente para atendente humano.
+
+O bot deve respeitar o horário comercial da clínica; fora do horário, deve informar o 
+horário de funcionamento e solicitar agendamento.
+
+O bot não deve realizar cancelamentos sem confirmação explícita do paciente 
+('Confirma o cancelamento? Sim/Não').
+
+O bot deve registrar todas as interações para fins de auditoria e melhoria contínua.
+
+Mensagens com linguagem inapropriada devem ser ignoradas pelo bot e o 
+atendimento encerrado com mensagem padrão.
+
+Após o atendimento humano, o bot pode retomar o controle somente se o operador 
+liberar o atendimento.
+
+Versão 1.0  |  2026
+
+Página 21
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Versão 1.0  |  2026
+
+Página 22
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+5.5 Regras de Acesso e Perfis
+
+Código
+
+Regra de Negócio
+
+RG-034
+
+RG-035
+
+RG-036
+
+RG-037
+
+RG-038
+
+RG-039
+
+O perfil Administrador tem acesso irrestrito a todos os módulos do sistema.
+
+O perfil Recepcionista pode gerenciar agendamentos, pacientes e registrar 
+pagamentos, mas não pode acessar relatórios financeiros completos.
+
+O perfil Dentista pode visualizar sua própria agenda e prontuários de seus pacientes, 
+mas não visualiza dados financeiros globais.
+
+Cada clínica deve ter ao menos um usuário com perfil Administrador ativo.
+
+Usuários inativos há mais de 90 dias devem ter acesso suspenso automaticamente.
+
+A exclusão de usuários é lógica (inativação); o histórico de ações do usuário é 
+mantido no log.
+
+5.6 Regras de Comunicação e LGPD
+
+Código
+
+RG-040
+
+RG-041
+
+RG-042
+
+RG-043
+
+RG-044
+
+RG-045
+
+Regra de Negócio
+
+O sistema deve obter consentimento explícito do paciente para o envio de mensagens 
+de marketing.
+
+O paciente deve ter opção de descadastramento das listas de marketing em qualquer 
+mensagem enviada.
+
+Dados pessoais de pacientes só podem ser acessados por usuários autorizados, 
+conforme a LGPD.
+
+O sistema deve fornecer mecanismo para exportação e exclusão dos dados de um 
+paciente mediante solicitação (direito ao esquecimento).
+
+Mensagens automáticas não devem ser enviadas entre 22h e 8h, salvo confirmações 
+imediatas de agendamento realizadas pelo próprio paciente.
+
+O sistema deve manter política de retenção de dados: histórico de consultas retido 
+por 5 anos; logs de acesso por 1 ano.
+
+5.7 Regras de Pré-Triagem
+
+Código
+
+RG-046
+
+RG-047
+
+RG-048
+
+Regra de Negócio
+
+A pré-triagem digital deve ser enviada automaticamente após a confirmação do 
+agendamento.
+
+O questionário de pré-triagem deve incluir: alergias a medicamentos, histórico de 
+doenças sistêmicas, uso de anticoagulantes e gestação.
+
+As respostas da pré-triagem devem ser vinculadas ao prontuário do paciente e 
+disponíveis ao dentista antes da consulta.
+
+RG-049
+
+Pacientes que indicarem uso de anticoagulantes ou condições de risco devem ser 
+
+Versão 1.0  |  2026
+
+Página 23
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Código
+
+Regra de Negócio
+
+sinalizados com alerta para o dentista.
+
+RG-050
+
+A pré-triagem é facultativa para o paciente, mas sua recusa deve ser registrada no 
+prontuário.
+
+Versão 1.0  |  2026
+
+Página 24
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+6. Pacotes e Precificação
+
+Pacote
+
+Funcionalidades Incluídas
+
+Valor Único
+
+Mensalidade
+
+Básico
+
+Pro
+
+Premium
+
+Premium+
+
+Agendamento, Lembretes 24h/2h, FAQ 
+automático, Cadastro de pacientes, Agenda 
+diária, Confirmação WhatsApp, Controle de 
+acesso.
+
+Tudo do Básico + Pré-triagem digital, 
+Pagamentos (Pix/Cartão/Dinheiro), Painel 
+administrativo, Relatórios básicos, Histórico 
+de pacientes, Pesquisa de satisfação, 
+Retorno automático (6m/1a), Handoff 
+humano.
+
+Tudo do Pro + WhatsApp API Oficial, 
+Marketing e campanhas, Relatórios 
+avançados, Resumo diário dentista, Suporte 
+multilíngue, 2FA, Exportação PDF/Excel, 
+Gráficos avançados, Aniversário do paciente.
+
+Tudo do Premium + IA generativa, Múltiplos 
+canais (Instagram/Facebook), Google 
+Calendar, Assinatura digital, Multiunidades, 
+App mobile, Teleconsulta.
+
+R$ 2.500 – R$ 
+4.000
+
+R$ 150 – 
+250/mês
+
+R$ 6.000 – R$ 
+8.000
+
+R$ 350 – 
+500/mês
+
+R$ 12.000 – R$ 
+20.000
+
+R$ 700 – 
+1.200/mês
+
+R$ 30.000+
+
+Sob consulta
+
+Observação: Os valores podem variar de acordo com a complexidade das integrações, volume de  
+pacientes   e   customizações   solicitadas.   Também   é   possível   oferecer   o   modelo   SaaS   com  
+mensalidade recorrente sem cobrança de licença inicial.
+
+6.1 Matriz de Funcionalidades por Pacote
+
+Funcionalidade
+
+Básico
+
+Pro
+
+Premium
+
+Premium
++
+
+Agendamento de consultas
+
+Lembretes automáticos (24h / 2h)
+
+FAQ automático
+
+Cadastro de pacientes
+
+✔
+
+✔
+
+✔
+
+✔
+
+Confirmação/Cancelamento automático ✔
+
+Controle de acesso por perfil
+
+Pré-triagem digital
+
+Pagamentos integrados (Pix/Cartão)
+
+✔
+
+—
+
+—
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+Versão 1.0  |  2026
+
+Página 25
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Funcionalidade
+
+Básico
+
+Pro
+
+Premium
+
+Premium
++
+
+Painel administrativo
+
+Relatórios básicos
+
+Histórico de pacientes
+
+Pesquisa de satisfação
+
+Retorno automático (6m/1a)
+
+Handoff para atendente humano
+
+WhatsApp API Oficial
+
+Marketing e campanhas
+
+Relatórios avançados + gráficos
+
+Resumo diário para dentistas
+
+Suporte multilíngue (PT/EN/ES)
+
+Exportação PDF/Excel
+
+2FA (autenticação dois fatores)
+
+IA generativa (ChatGPT/Claude)
+
+Instagram / Facebook Messenger
+
+Google Calendar
+
+Multiunidades
+
+App mobile (iOS / Android)
+
+Teleconsulta
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+✔
+
+Versão 1.0  |  2026
+
+Página 26
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+7. Estimativa de Mercado
+
+O mercado-alvo prioritário são clínicas odontológicas de pequeno e médio porte no Brasil, estimado 
+em   mais   de   400.000   estabelecimentos   odontológicos   cadastrados   no   CRO.   A   tabela   abaixo 
+consolida as estimativas de valor para diferentes estágios de desenvolvimento e posicionamento do 
+produto.
+
+Versão do Produto
+
+Valor de Mercado 
+Estimado
+
+Perfil do Cliente
+
+MVP Comercial (Básico)
+
+R$ 5.000 – R$ 10.000
+
+Consultórios individuais e 
+clínicas pequenas
+
+Sistema Profissional Completo 
+(Pro)
+
+R$ 12.000 – R$ 25.000
+
+Clínicas de médio porte
+
+SaaS Multi-clínicas (Premium)
+
+R$ 30.000+
+
+SaaS com IA + App Mobile 
+(Premium+)
+
+R$ 50.000+
+
+Redes de clínicas e 
+franquias
+
+Grandes redes e grupos 
+odontológicos
+
+7.1 Modelo de Receita Recorrente (SaaS)
+
+O modelo SaaS permite geração de receita recorrente por clínica cliente. A tabela abaixo apresenta 
+a estimativa de MRR (Receita Mensal Recorrente) conforme a carteira de clientes.
+
+Clientes Ativos
+
+Mensalidade Média
+
+MRR Estimado
+
+ARR Estimado
+
+10 clínicas
+
+50 clínicas
+
+100 clínicas
+
+500 clínicas
+
+R$ 400/mês
+
+R$ 400/mês
+
+R$ 500/mês
+
+R$ 600/mês
+
+R$ 4.000/mês
+
+R$ 48.000/ano
+
+R$ 20.000/mês
+
+R$ 240.000/ano
+
+R$ 50.000/mês
+
+R$ 600.000/ano
+
+R$ 300.000/mês
+
+R$ 3.600.000/ano
+
+7.2 Diferenciais Competitivos
+
+Integração oficial com WhatsApp Business API (não utiliza soluções não homologadas)
+
+•
+• Conformidade com LGPD desde a concepção (Privacy by Design)
+• Bot configurável sem necessidade de programação
+• Módulo financeiro integrado ao agendamento
+• Automações de reengajamento pós-consulta
+• Suporte multilíngue para clínicas com público estrangeiro
+• Arquitetura SaaS multi-tenant pronta para escalar
+
+Versão 1.0  |  2026
+
+Página 27
+
+Bot Clínica Odontológica  |  Documentação de Requisitos
+
+Elaborado por
+
+Versão
+
+Data
+
+Status
+
+Equipe de Desenvolvimento
+
+1.0
+
+2026
+
+Aprovado
+
+Versão 1.0  |  2026
+
+Página 28
+
+
