@@ -8,13 +8,17 @@ const Finance: React.FC = () => {
   const [reports, setReports] = useState({ daily: 0, monthly: 0, yearly: 0 });
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'paid' | 'reports'>('pending');
+  const [reportMonth, setReportMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   const [showPayModal, setShowPayModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [selectedAppt, setSelectedAppt] = useState<any>(null);
   const [refundAppt, setRefundAppt] = useState<any>(null);
   const [refundReason, setRefundReason] = useState('');
-  const [payForm, setPayForm] = useState({ method: 'CREDIT_CARD', discount: 0, installments: 1 });
+  const [payForm, setPayForm] = useState<{method: string, amount: number | string, serviceType: string, installments: number}>({ method: 'PIX', amount: '', serviceType: '', installments: 1 });
 
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -29,8 +33,8 @@ const Finance: React.FC = () => {
       const headers = { Authorization: `Bearer ${token}` };
       const [apptRes, defRes, repRes] = await Promise.all([
         axios.get('http://localhost:3000/api/appointments', { headers }),
-        axios.get('http://localhost:3000/api/finance/defaulters', { headers }),
-        axios.get('http://localhost:3000/api/finance/reports', { headers }),
+        axios.get(`http://localhost:3000/api/finance/defaulters?month=${reportMonth}`, { headers }),
+        axios.get(`http://localhost:3000/api/finance/reports?month=${reportMonth}`, { headers }),
       ]);
       setAppointments(apptRes.data);
       setDefaulters(defRes.data);
@@ -38,7 +42,17 @@ const Finance: React.FC = () => {
     } catch (err) { console.error(err); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [reportMonth]);
+
+  const getMethodLabel = (method: string) => {
+    const map: Record<string, string> = {
+      PIX: 'PIX',
+      CREDIT_CARD: 'Cartão de Crédito',
+      DEBIT_CARD: 'Cartão de Débito',
+      CASH: 'Dinheiro',
+    };
+    return map[method] || method;
+  };
 
   const pending = appointments.filter((a) => !a.payment && a.status !== 'CANCELED');
   const paid = appointments.filter((a) => a.payment && a.payment.status === 'PAID');
@@ -50,7 +64,8 @@ const Finance: React.FC = () => {
       await axios.post('http://localhost:3000/api/finance', {
         appointmentId: selectedAppt.id,
         method: payForm.method,
-        discount: Number(payForm.discount),
+        amount: Number(payForm.amount.toString().replace(',', '.')),
+        serviceType: payForm.serviceType,
         installments: Number(payForm.installments),
       }, { headers: { Authorization: `Bearer ${token}` } });
       showToast('Pagamento registrado!', 'success');
@@ -91,7 +106,12 @@ const Finance: React.FC = () => {
 
   const openPayModal = (appt: any) => {
     setSelectedAppt(appt);
-    setPayForm({ method: 'CREDIT_CARD', discount: 0, installments: 1 });
+    setPayForm({ 
+      method: 'PIX', 
+      amount: appt.price ? appt.price.toFixed(2).replace('.', ',') : '', 
+      serviceType: appt.serviceType || '', 
+      installments: 1 
+    });
     setShowPayModal(true);
   };
 
@@ -208,6 +228,7 @@ const Finance: React.FC = () => {
                   <th>Data</th>
                   <th>Paciente</th>
                   <th>Serviço</th>
+                  <th>Método</th>
                   <th>Valor Pago</th>
                   <th style={{ textAlign: 'right' }}>Ações</th>
                 </tr>
@@ -218,8 +239,14 @@ const Finance: React.FC = () => {
                     <td>{new Date(p.date).toLocaleDateString('pt-BR')}</td>
                     <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
                     <td>{p.serviceType}</td>
+                    <td><span className="badge badge-blue">{getMethodLabel(p.payment?.method)}</span></td>
                     <td style={{ fontWeight: 600, color: 'var(--green)' }}>
                       R$ {p.payment?.amount?.toFixed(2)}
+                      {p.payment?.discount > 0 && (
+                        <div style={{ fontSize: '11.5px', color: 'var(--amber)', fontWeight: 500, marginTop: '2px', background: '#FEF3C7', display: 'inline-block', padding: '2px 6px', borderRadius: '4px' }}>
+                          - R$ {p.payment.discount.toFixed(2)}
+                        </div>
+                      )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
@@ -241,6 +268,18 @@ const Finance: React.FC = () => {
         {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 500 }}>Filtrar Mês:</label>
+                <input 
+                  type="month" 
+                  className="form-input" 
+                  style={{ width: 'auto', padding: '6px 12px' }}
+                  value={reportMonth} 
+                  onChange={(e) => setReportMonth(e.target.value)} 
+                />
+              </div>
+            </div>
             <div className="grid-2">
               {/* Resumo */}
               <div>
@@ -296,17 +335,18 @@ const Finance: React.FC = () => {
               <button className="modal-close" onClick={() => setShowPayModal(false)}><X size={16} /></button>
             </div>
             <div className="modal-body">
-              <div className="info-box">
-                <div style={{ fontWeight: 600, marginBottom: '4px' }}>{selectedAppt.patient.name}</div>
-                <div className="text-sm text-muted">Serviço: {selectedAppt.serviceType}</div>
-                <div style={{ marginTop: '8px', fontSize: '13.5px' }}>
-                  Preço Base: <strong>R$ {selectedAppt.price?.toFixed(2) || '0,00'}</strong>
-                </div>
+              <div className="info-box" style={{ marginBottom: '16px' }}>
+                <div style={{ fontWeight: 600 }}>Paciente: {selectedAppt.patient.name}</div>
               </div>
               <div className="form-group">
-                <label className="form-label">Desconto (%) — máx. recomendado: 20%</label>
-                <input type="number" className="form-input" min="0" max="100" value={payForm.discount}
-                  onChange={(e) => setPayForm({ ...payForm, discount: Number(e.target.value) })} />
+                <label className="form-label">Procedimento Realizado *</label>
+                <input type="text" className="form-input" value={payForm.serviceType}
+                  onChange={(e) => setPayForm({ ...payForm, serviceType: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Valor (R$) *</label>
+                <input type="text" inputMode="decimal" className="form-input" placeholder="0.00" value={payForm.amount}
+                  onChange={(e) => setPayForm({ ...payForm, amount: e.target.value.replace(/[^0-9.,]/g, '') })} />
               </div>
               <div className="form-group">
                 <label className="form-label">Método de Pagamento *</label>
@@ -320,9 +360,14 @@ const Finance: React.FC = () => {
               </div>
               {payForm.method === 'CREDIT_CARD' && (
                 <div className="form-group">
-                  <label className="form-label">Parcelas (mín. R$30/parcela)</label>
+                  <label className="form-label">Parcelas</label>
                   <input type="number" className="form-input" min="1" max="12" value={payForm.installments}
                     onChange={(e) => setPayForm({ ...payForm, installments: Number(e.target.value) })} />
+                  {payForm.installments > 1 && payForm.amount !== '' && (
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                      {payForm.installments}x de R$ {(Number(payForm.amount.toString().replace(',', '.')) / payForm.installments).toFixed(2)}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, X } from 'lucide-react';
+import { Plus, Search, Trash2, X, Edit2 } from 'lucide-react';
 import axios from 'axios';
 
 interface Dentist {
@@ -15,8 +15,26 @@ const Dentists: React.FC = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [formData, setFormData] = useState({ name: '', cro: '', specialties: '', phone: '' });
+
+  const openNewModal = () => {
+    setEditId(null);
+    setFormData({ name: '', cro: '', specialties: '', phone: '' });
+    setShowModal(true);
+  };
+
+  const openEditModal = (d: Dentist) => {
+    setEditId(d.id);
+    setFormData({ 
+      name: d.name, 
+      cro: d.cro, 
+      specialties: d.specialties || '', 
+      phone: d.phone 
+    });
+    setShowModal(true);
+  };
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type });
@@ -39,11 +57,19 @@ const Dentists: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3000/api/dentists', formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      showToast('Dentista cadastrado com sucesso!', 'success');
+      if (editId) {
+        await axios.put(`http://localhost:3000/api/dentists/${editId}`, formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        showToast('Dentista atualizado com sucesso!', 'success');
+      } else {
+        await axios.post('http://localhost:3000/api/dentists', formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        showToast('Dentista cadastrado com sucesso!', 'success');
+      }
       setShowModal(false);
+      setEditId(null);
       setFormData({ name: '', cro: '', specialties: '', phone: '' });
       fetchDentists();
     } catch (err: any) {
@@ -93,7 +119,7 @@ const Dentists: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={openNewModal}>
           <Plus size={15} />
           Novo Dentista
         </button>
@@ -130,6 +156,13 @@ const Dentists: React.FC = () => {
                   <td>{d.phone}</td>
                   <td style={{ textAlign: 'right' }}>
                     <button
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '6px', marginRight: '4px' }}
+                      onClick={() => openEditModal(d)}
+                      title="Editar dentista"
+                    >
+                      <Edit2 size={15} />
+                    </button>
+                    <button
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '6px' }}
                       onClick={() => handleDelete(d.id)}
                       title="Inativar dentista"
@@ -149,7 +182,7 @@ const Dentists: React.FC = () => {
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal">
             <div className="modal-header">
-              <span className="modal-title">Cadastrar Dentista</span>
+              <span className="modal-title">{editId ? 'Editar Dentista' : 'Cadastrar Dentista'}</span>
               <button className="modal-close" onClick={() => setShowModal(false)}><X size={16} /></button>
             </div>
             <div className="modal-body">

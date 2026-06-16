@@ -93,7 +93,7 @@ export const login = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { id: user.id, tenantId: user.tenantId, role: user.role },
       process.env.JWT_SECRET || 'secret',
-      { expiresIn: '30m' } // 30 minutos de sessão
+      { expiresIn: '7d' } // 7 dias de sessão
     );
 
     return res.json({ token, role: user.role });

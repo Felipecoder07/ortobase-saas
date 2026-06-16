@@ -3,7 +3,8 @@ import {
   createAppointment,
   getAppointments,
   updateAppointmentStatus,
-  deleteAppointment
+  deleteAppointment,
+  updateAppointment
 } from '../controllers/appointmentController';
 import { authenticate } from '../middlewares/authMiddleware';
 
@@ -100,6 +101,8 @@ router.get('/', getAppointments);
  *         description: Status atualizado
  */
 router.patch('/:id/status', updateAppointmentStatus);
+
+router.put('/:id', updateAppointment);
 
 router.delete('/:id', deleteAppointment);
 

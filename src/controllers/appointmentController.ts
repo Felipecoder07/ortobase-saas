@@ -5,7 +5,7 @@ import prisma from '../prisma';
 export const createAppointment = async (req: AuthRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
-    const { patientId, dentistId, date, durationInMinutes, serviceType } = req.body;
+    const { patientId, dentistId, date, durationInMinutes, serviceType, price } = req.body;
 
     const appointmentDate = new Date(date);
     const appointmentEnd = new Date(appointmentDate.getTime() + durationInMinutes * 60000);
@@ -56,7 +56,8 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
         dentistId,
         date: appointmentDate,
         durationInMinutes,
-        serviceType
+        serviceType,
+        price: price !== undefined ? Number(price) : 0
       },
       include: {
         patient: true,
@@ -148,6 +149,76 @@ export const deleteAppointment = async (req: AuthRequest, res: Response) => {
     });
 
     return res.json({ message: 'Consulta excluída' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro interno no servidor' });
+  }
+};
+
+export const updateAppointment = async (req: AuthRequest, res: Response) => {
+  try {
+    const { tenantId } = req.user!;
+    const { id } = req.params;
+    const { patientId, dentistId, date, durationInMinutes, serviceType, price } = req.body;
+
+    const appointment = await prisma.appointment.findFirst({
+      where: { id, tenantId }
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Consulta não encontrada' });
+    }
+
+    const appointmentDate = new Date(date);
+    const appointmentEnd = new Date(appointmentDate.getTime() + durationInMinutes * 60000);
+
+    const conflictingAppointment = await prisma.appointment.findFirst({
+      where: {
+        tenantId,
+        dentistId,
+        id: { not: id },
+        status: { in: ['SCHEDULED', 'CONFIRMED'] },
+        OR: [
+          {
+            date: {
+              lt: appointmentEnd,
+              gte: appointmentDate
+            }
+          },
+          {
+            date: {
+              lte: appointmentDate
+            }
+          }
+        ]
+      }
+    });
+
+    if (conflictingAppointment) {
+      const confStart = conflictingAppointment.date.getTime();
+      const confEnd = confStart + conflictingAppointment.durationInMinutes * 60000;
+      const reqStart = appointmentDate.getTime();
+      const reqEnd = appointmentEnd.getTime();
+
+      if ((reqStart >= confStart && reqStart < confEnd) || (reqEnd > confStart && reqEnd <= confEnd) || (reqStart <= confStart && reqEnd >= confEnd)) {
+         return res.status(400).json({ error: 'Conflito de horário! O dentista já possui uma consulta neste período.' });
+      }
+    }
+
+    const updated = await prisma.appointment.update({
+      where: { id },
+      data: { 
+        patientId, 
+        dentistId, 
+        date: appointmentDate, 
+        durationInMinutes, 
+        serviceType,
+        ...(price !== undefined && { price: Number(price) })
+      },
+      include: { patient: true, dentist: true }
+    });
+
+    return res.json(updated);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Erro interno no servidor' });

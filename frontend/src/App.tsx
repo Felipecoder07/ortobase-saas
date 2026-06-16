@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 
 import DashboardLayout from './layouts/DashboardLayout';
 import Patients from './pages/Patients';
+import PatientProfile from './pages/PatientProfile';
 import Dentists from './pages/Dentists';
 import Agenda from './pages/Agenda';
 import Finance from './pages/Finance';
@@ -36,6 +37,7 @@ const App: React.FC = () => {
         <Route index element={<Dashboard />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="patients" element={<Patients />} />
+        <Route path="patients/:id" element={<PatientProfile />} />
         <Route path="dentists" element={<Dentists />} />
         <Route path="finance" element={<Finance />} />
       </Route>

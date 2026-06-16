@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Check, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Check, X, Edit2, UserMinus, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 
 interface Appointment {
@@ -38,11 +38,33 @@ const Agenda: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const [formData, setFormData] = useState({
-    patientId: '', dentistId: '', time: '', durationInMinutes: 30, serviceType: ''
+    patientId: '', dentistId: '', time: '', durationInMinutes: 30, serviceType: '', price: ''
   });
+
+  const openNewModal = () => {
+    setEditId(null);
+    setFormData({ patientId: '', dentistId: '', time: '', durationInMinutes: 30, serviceType: '', price: '' });
+    setShowModal(true);
+  };
+
+  const openEditModal = (appt: any) => {
+    setEditId(appt.id);
+    const dateObj = new Date(appt.date);
+    const timeString = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+    setFormData({
+      patientId: appt.patientId,
+      dentistId: appt.dentistId,
+      time: timeString,
+      durationInMinutes: appt.durationInMinutes,
+      serviceType: appt.serviceType || '',
+      price: appt.price || ''
+    });
+    setShowModal(true);
+  };
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type });
@@ -89,16 +111,25 @@ const Agenda: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3000/api/appointments', {
+      const payload = {
         patientId: formData.patientId,
         dentistId: formData.dentistId,
         date: `${currentDate}T${formData.time}:00.000Z`,
         durationInMinutes: Number(formData.durationInMinutes),
         serviceType: formData.serviceType,
-      }, { headers: { Authorization: `Bearer ${token}` } });
-      showToast('Consulta agendada com sucesso!', 'success');
+        price: formData.price ? Number(formData.price.toString().replace(',', '.')) : 0,
+      };
+
+      if (editId) {
+        await axios.put(`http://localhost:3000/api/appointments/${editId}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        showToast('Consulta atualizada com sucesso!', 'success');
+      } else {
+        await axios.post('http://localhost:3000/api/appointments', payload, { headers: { Authorization: `Bearer ${token}` } });
+        showToast('Consulta agendada com sucesso!', 'success');
+      }
       setShowModal(false);
-      setFormData({ patientId: '', dentistId: '', time: '', durationInMinutes: 30, serviceType: '' });
+      setEditId(null);
+      setFormData({ patientId: '', dentistId: '', time: '', durationInMinutes: 30, serviceType: '', price: '' });
       fetchData();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Erro ao agendar.', 'error');
@@ -155,7 +186,7 @@ const Agenda: React.FC = () => {
           </button>
         </div>
 
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={openNewModal}>
           <Plus size={15} />
           Nova Consulta
         </button>
@@ -191,23 +222,48 @@ const Agenda: React.FC = () => {
                 {/* Status + actions */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   {statusBadge(appt.status)}
-                  {appt.status !== 'CANCELED' && appt.status !== 'COMPLETED' && (
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                  {appt.status !== 'CANCELED' && appt.status !== 'COMPLETED' && appt.status !== 'NO_SHOW' && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
                       <button
-                        className="btn btn-outline-green btn-sm"
-                        onClick={() => updateStatus(appt.id, 'CONFIRMED')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}
+                        onClick={() => openEditModal(appt)}
+                        title="Editar"
                       >
-                        <Check size={13} />
-                        Confirmar
+                        <Edit2 size={16} />
                       </button>
+
+                      {appt.status === 'SCHEDULED' && (
+                        <button
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B5CF6' }}
+                          onClick={() => updateStatus(appt.id, 'CONFIRMED')}
+                          title="Confirmar"
+                        >
+                          <Check size={16} />
+                        </button>
+                      )}
+
                       <button
-                        className="btn btn-outline-red btn-sm"
-                        onClick={() => updateStatus(appt.id, 'CANCELED')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#10B981' }}
+                        onClick={() => updateStatus(appt.id, 'COMPLETED')}
+                        title="Realizada"
                       >
-                        <X size={13} />
-                        Cancelar
+                        <CheckCircle2 size={16} />
+                      </button>
+
+                      <button
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#F59E0B' }}
+                        onClick={() => updateStatus(appt.id, 'NO_SHOW')}
+                        title="Faltou"
+                      >
+                        <UserMinus size={16} />
+                      </button>
+
+                      <button
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444' }}
+                        onClick={() => updateStatus(appt.id, 'CANCELED')}
+                        title="Cancelar"
+                      >
+                        <X size={16} />
                       </button>
                     </div>
                   )}
@@ -223,7 +279,7 @@ const Agenda: React.FC = () => {
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal">
             <div className="modal-header">
-              <span className="modal-title">Agendar Consulta</span>
+              <span className="modal-title">{editId ? 'Editar Consulta' : 'Agendar Consulta'}</span>
               <button className="modal-close" onClick={() => setShowModal(false)}><X size={16} /></button>
             </div>
             <div className="modal-body">
@@ -252,8 +308,19 @@ const Agenda: React.FC = () => {
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Serviço / Procedimento *</label>
-                <input type="text" className="form-input" placeholder="Ex: Limpeza, Extração..." value={formData.serviceType} onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })} />
+                <label className="form-label">Procedimento</label>
+                <input type="text" className="form-input" value={formData.serviceType} onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Valor / Preço (R$)</label>
+                <input 
+                  type="text" 
+                  inputMode="decimal" 
+                  className="form-input" 
+                  placeholder="0.00" 
+                  value={formData.price} 
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value.replace(/[^0-9.,]/g, '') })} 
+                />
               </div>
             </div>
             <div className="modal-footer">

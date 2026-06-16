@@ -108,7 +108,7 @@ const Login: React.FC = () => {
               marginBottom: '16px',
             }}>
               Sua clínica<br />
-              <span style={{ color: '#38BDF8' }}>organizada.</span>
+              <span style={{ color: '#38BDF8' }}>organizada</span>
             </h1>
             <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.65)', marginBottom: '36px', lineHeight: 1.6 }}>
               Gerencie consultas, pacientes e finanças em<br />
@@ -165,11 +165,11 @@ const Login: React.FC = () => {
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="form-group">
-              <label className="form-label">E-mail</label>
+              <label className="form-label">Login</label>
               <input
-                type="email"
+                type="text"
                 className="form-input"
-                placeholder="seu@email.com"
+                placeholder="Usuário ou e-mail"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

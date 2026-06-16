@@ -36,7 +36,12 @@ const DashboardLayout: React.FC = () => {
     navigate('/login');
   };
 
-  const pageTitle = pageTitles[location.pathname] || 'OrtoBase';
+  let pageTitle = 'OrtoBase';
+  if (location.pathname.startsWith('/dashboard/patients/') && location.pathname !== '/dashboard/patients') {
+    pageTitle = 'Perfil do Paciente';
+  } else {
+    pageTitle = pageTitles[location.pathname] || 'OrtoBase';
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, Trash2, X, Edit2, User } from 'lucide-react';
 import axios from 'axios';
 
 interface Patient {
@@ -7,15 +8,35 @@ interface Patient {
   name: string;
   cpf: string;
   phone: string;
+  dateOfBirth: string;
 }
 
 const Patients: React.FC = () => {
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [formData, setFormData] = useState({ name: '', cpf: '', dateOfBirth: '', phone: '' });
+
+  const openNewModal = () => {
+    setEditId(null);
+    setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '' });
+    setShowModal(true);
+  };
+
+  const openEditModal = (p: Patient) => {
+    setEditId(p.id);
+    setFormData({ 
+      name: p.name, 
+      cpf: p.cpf, 
+      dateOfBirth: p.dateOfBirth ? p.dateOfBirth.split('T')[0] : '', 
+      phone: p.phone 
+    });
+    setShowModal(true);
+  };
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type });
@@ -38,11 +59,19 @@ const Patients: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3000/api/patients', formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      showToast('Paciente cadastrado com sucesso!', 'success');
+      if (editId) {
+        await axios.put(`http://localhost:3000/api/patients/${editId}`, formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        showToast('Paciente atualizado com sucesso!', 'success');
+      } else {
+        await axios.post('http://localhost:3000/api/patients', formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        showToast('Paciente cadastrado com sucesso!', 'success');
+      }
       setShowModal(false);
+      setEditId(null);
       setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '' });
       fetchPatients();
     } catch (err: any) {
@@ -92,7 +121,7 @@ const Patients: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={openNewModal}>
           <Plus size={15} />
           Novo Paciente
         </button>
@@ -127,6 +156,20 @@ const Patients: React.FC = () => {
                   <td>{p.phone}</td>
                   <td style={{ textAlign: 'right' }}>
                     <button
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366F1', padding: '6px', marginRight: '4px' }}
+                      onClick={() => navigate(`/dashboard/patients/${p.id}`)}
+                      title="Ver Perfil"
+                    >
+                      <User size={15} />
+                    </button>
+                    <button
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '6px', marginRight: '4px' }}
+                      onClick={() => openEditModal(p)}
+                      title="Editar paciente"
+                    >
+                      <Edit2 size={15} />
+                    </button>
+                    <button
                       className="btn-icon"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '6px' }}
                       onClick={() => handleDelete(p.id)}
@@ -147,7 +190,7 @@ const Patients: React.FC = () => {
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal">
             <div className="modal-header">
-              <span className="modal-title">Cadastrar Paciente</span>
+              <span className="modal-title">{editId ? 'Editar Paciente' : 'Cadastrar Paciente'}</span>
               <button className="modal-close" onClick={() => setShowModal(false)}><X size={16} /></button>
             </div>
             <div className="modal-body">

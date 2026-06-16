@@ -69,7 +69,16 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
 
     const patient = await prisma.patient.findFirst({
-      where: { id, tenantId, isActive: true }
+      where: { id, tenantId, isActive: true },
+      include: {
+        appointments: {
+          include: {
+            dentist: { select: { name: true } },
+            payment: true
+          },
+          orderBy: { date: 'desc' }
+        }
+      }
     });
 
     if (!patient) {
