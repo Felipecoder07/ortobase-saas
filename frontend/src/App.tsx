@@ -9,6 +9,7 @@ import PatientProfile from './pages/PatientProfile';
 import Dentists from './pages/Dentists';
 import Agenda from './pages/Agenda';
 import Finance from './pages/Finance';
+import Procedures from './pages/Procedures';
 
 // Função auxiliar para verificar autenticação
 const isAuthenticated = () => {
@@ -40,6 +41,7 @@ const App: React.FC = () => {
         <Route path="patients/:id" element={<PatientProfile />} />
         <Route path="dentists" element={<Dentists />} />
         <Route path="finance" element={<Finance />} />
+        <Route path="procedures" element={<Procedures />} />
       </Route>
       {/* Rota padrão redireciona para o painel se logado, ou login se deslogado */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -17,6 +17,11 @@ model Tenant {
   dentists  Dentist[]
   appointments Appointment[]
   payments  Payment[]
+  anamneses Anamnesis[]
+  procedures Procedure[]
+  treatmentPlans TreatmentPlan[]
+  toothConditions ToothCondition[]
+  attachments PatientAttachment[]
 }
 
 model User {
@@ -48,6 +53,10 @@ model Patient {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   appointments  Appointment[]
+  anamnesis     Anamnesis?
+  treatmentPlans TreatmentPlan[]
+  toothConditions ToothCondition[]
+  attachments    PatientAttachment[]
 
   @@unique([tenantId, cpf]) // CPF is unique within a tenant
 }
@@ -65,6 +74,7 @@ model Dentist {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   appointments Appointment[]
+  treatmentPlans TreatmentPlan[]
 }
 
 model Appointment {
@@ -100,4 +110,93 @@ model Payment {
   refundReason   String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+}
+
+model Anamnesis {
+  id                String   @id @default(uuid())
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  patientId         String   @unique
+  patient           Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  mainComplaint     String?
+  allergies         String?
+  medicationsInUse  String?
+  chronicDiseases   String?
+  previousSurgeries String?
+  observations      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Procedure {
+  id                String   @id @default(uuid())
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  name              String
+  description       String?
+  basePrice         Float
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  treatmentPlanItems TreatmentPlanItem[]
+}
+
+model TreatmentPlan {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  dentistId   String
+  dentist     Dentist  @relation(fields: [dentistId], references: [id])
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
+  totalAmount Float    @default(0.0)
+  discount    Float    @default(0.0)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       TreatmentPlanItem[]
+}
+
+model TreatmentPlanItem {
+  id              String   @id @default(uuid())
+  treatmentPlanId String
+  treatmentPlan   TreatmentPlan @relation(fields: [treatmentPlanId], references: [id], onDelete: Cascade)
+  procedureId     String
+  procedure       Procedure     @relation(fields: [procedureId], references: [id])
+  price           Float
+  tooth           String?       // Opcional, para indicar dente
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ToothCondition {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  toothNumber String
+  face        String   // V, L, P, M, D, O, I, ALL
+  condition   String   // CARIES, RESTORED, EXTRACTED, IMPLANT, CROWN, ENDODONTICS, HEALTHY
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([patientId, toothNumber, face]) // Garante que a mesma face não tenha dois status duplicados
+}
+
+model PatientAttachment {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  filename    String
+  fileUrl     String
+  fileType    String   // image/jpeg, application/pdf, etc
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

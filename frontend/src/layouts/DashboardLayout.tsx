@@ -8,6 +8,7 @@ import {
   DollarSign,
   Moon,
   LogOut,
+  ClipboardList
 } from 'lucide-react';
 
 const navItems = [
@@ -15,6 +16,7 @@ const navItems = [
   { name: 'Agenda', path: '/dashboard/agenda', icon: Calendar },
   { name: 'Pacientes', path: '/dashboard/patients', icon: Users },
   { name: 'Dentistas', path: '/dashboard/dentists', icon: Stethoscope },
+  { name: 'Procedimentos', path: '/dashboard/procedures', icon: ClipboardList },
   { name: 'Financeiro', path: '/dashboard/finance', icon: DollarSign },
 ];
 
@@ -23,6 +25,7 @@ const pageTitles: Record<string, string> = {
   '/dashboard/agenda': 'Agenda',
   '/dashboard/patients': 'Pacientes',
   '/dashboard/dentists': 'Dentistas',
+  '/dashboard/procedures': 'Procedimentos',
   '/dashboard/finance': 'Financeiro',
 };
 
