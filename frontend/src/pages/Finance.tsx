@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, AlertCircle, UserX, MessageCircle, RefreshCw, X } from 'lucide-react';
+import { DollarSign, AlertCircle, UserX, MessageCircle, RefreshCw, X, Tag } from 'lucide-react';
 import axios from 'axios';
+import { maskCurrency, parseCurrency } from '../utils/masks';
 
 const Finance: React.FC = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -58,13 +59,18 @@ const Finance: React.FC = () => {
   const paid = appointments.filter((a) => a.payment && a.payment.status === 'PAID');
 
   const handlePay = async () => {
+    const amount = parseCurrency(payForm.amount.toString());
+    if (!amount || amount <= 0) {
+      showToast('O valor deve ser maior que zero.', 'error');
+      return;
+    }
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       await axios.post('http://localhost:3000/api/finance', {
         appointmentId: selectedAppt.id,
         method: payForm.method,
-        amount: Number(payForm.amount.toString().replace(',', '.')),
+        amount: amount,
         serviceType: payForm.serviceType,
         installments: Number(payForm.installments),
       }, { headers: { Authorization: `Bearer ${token}` } });
@@ -108,7 +114,7 @@ const Finance: React.FC = () => {
     setSelectedAppt(appt);
     setPayForm({ 
       method: 'PIX', 
-      amount: appt.price ? appt.price.toFixed(2).replace('.', ',') : '', 
+      amount: appt.price ? maskCurrency(appt.price.toFixed(2).replace('.', '')) : '', 
       serviceType: appt.serviceType || '', 
       installments: 1 
     });
@@ -193,6 +199,7 @@ const Finance: React.FC = () => {
                 <tr>
                   <th>Data</th>
                   <th>Paciente</th>
+                  <th>Dentista</th>
                   <th>Serviço</th>
                   <th>Status</th>
                   <th>Valor</th>
@@ -204,6 +211,7 @@ const Finance: React.FC = () => {
                   <tr key={p.id}>
                     <td>{new Date(p.date).toLocaleDateString('pt-BR')}</td>
                     <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
+                    <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.dentist?.name || '-'}</td>
                     <td>{p.serviceType}</td>
                     <td><StatusBadge status={p.status} /></td>
                     <td>R$ {p.price?.toFixed(2) || '0,00'}</td>
@@ -227,6 +235,7 @@ const Finance: React.FC = () => {
                 <tr>
                   <th>Data</th>
                   <th>Paciente</th>
+                  <th>Dentista</th>
                   <th>Serviço</th>
                   <th>Método</th>
                   <th>Valor Pago</th>
@@ -238,15 +247,33 @@ const Finance: React.FC = () => {
                   <tr key={p.id}>
                     <td>{new Date(p.date).toLocaleDateString('pt-BR')}</td>
                     <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
+                    <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.dentist?.name || '-'}</td>
                     <td>{p.serviceType}</td>
                     <td><span className="badge badge-blue">{getMethodLabel(p.payment?.method)}</span></td>
-                    <td style={{ fontWeight: 600, color: 'var(--green)' }}>
-                      R$ {p.payment?.amount?.toFixed(2)}
-                      {p.payment?.discount > 0 && (
-                        <div style={{ fontSize: '11.5px', color: 'var(--amber)', fontWeight: 500, marginTop: '2px', background: '#FEF3C7', display: 'inline-block', padding: '2px 6px', borderRadius: '4px' }}>
-                          - R$ {p.payment.discount.toFixed(2)}
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--green)', fontSize: '14px' }}>
+                            R$ {p.payment?.amount?.toFixed(2)}
+                          </span>
+                          {p.payment?.discount > 0 && (
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textDecoration: 'line-through', fontWeight: 400 }}>
+                              R$ {p.price?.toFixed(2)}
+                            </span>
+                          )}
                         </div>
-                      )}
+                        {p.payment?.discount > 0 && (
+                          <div style={{ 
+                            fontSize: '11px', color: '#b45309', background: '#fef3c7', 
+                            padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', 
+                            alignItems: 'center', gap: '4px', width: 'fit-content', fontWeight: 600,
+                            border: '1px solid #fde68a'
+                          }}>
+                            <Tag size={10} strokeWidth={2.5} />
+                            Desconto de R$ {p.payment.discount.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
@@ -268,16 +295,48 @@ const Finance: React.FC = () => {
         {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 500 }}>Filtrar Mês:</label>
-                <input 
-                  type="month" 
-                  className="form-input" 
-                  style={{ width: 'auto', padding: '6px 12px' }}
-                  value={reportMonth} 
-                  onChange={(e) => setReportMonth(e.target.value)} 
-                />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>Visão Geral do Período</h2>
+              <div style={{ 
+                display: 'flex', alignItems: 'center', gap: '12px', 
+                background: 'var(--bg)', border: '1px solid var(--border)', 
+                padding: '6px 12px', borderRadius: '8px'
+              }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Filtrar Mês:
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <select 
+                    className="form-select" 
+                    style={{ width: '120px', padding: '4px 8px', fontSize: '13px', minHeight: '32px' }}
+                    value={reportMonth.split('-')[1]}
+                    onChange={(e) => setReportMonth(`${reportMonth.split('-')[0]}-${e.target.value}`)}
+                  >
+                    <option value="01">Janeiro</option>
+                    <option value="02">Fevereiro</option>
+                    <option value="03">Março</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Maio</option>
+                    <option value="06">Junho</option>
+                    <option value="07">Julho</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                  </select>
+                  <select 
+                    className="form-select" 
+                    style={{ width: '85px', padding: '4px 8px', fontSize: '13px', minHeight: '32px' }}
+                    value={reportMonth.split('-')[0]}
+                    onChange={(e) => setReportMonth(`${e.target.value}-${reportMonth.split('-')[1]}`)}
+                  >
+                    {Array.from({ length: 11 }, (_, i) => {
+                       const year = new Date().getFullYear() - 5 + i;
+                       return <option key={year} value={year}>{year}</option>
+                    })}
+                  </select>
+                </div>
               </div>
             </div>
             <div className="grid-2">
@@ -345,8 +404,8 @@ const Finance: React.FC = () => {
               </div>
               <div className="form-group">
                 <label className="form-label">Valor (R$) *</label>
-                <input type="text" inputMode="decimal" className="form-input" placeholder="0.00" value={payForm.amount}
-                  onChange={(e) => setPayForm({ ...payForm, amount: e.target.value.replace(/[^0-9.,]/g, '') })} />
+                <input type="text" inputMode="numeric" className="form-input" placeholder="0,00" value={payForm.amount}
+                  onChange={(e) => setPayForm({ ...payForm, amount: maskCurrency(e.target.value) })} />
               </div>
               <div className="form-group">
                 <label className="form-label">Método de Pagamento *</label>
@@ -365,7 +424,7 @@ const Finance: React.FC = () => {
                     onChange={(e) => setPayForm({ ...payForm, installments: Number(e.target.value) })} />
                   {payForm.installments > 1 && payForm.amount !== '' && (
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      {payForm.installments}x de R$ {(Number(payForm.amount.toString().replace(',', '.')) / payForm.installments).toFixed(2)}
+                      {payForm.installments}x de R$ {(parseCurrency(payForm.amount.toString()) / payForm.installments).toFixed(2).replace('.', ',')}
                     </div>
                   )}
                 </div>

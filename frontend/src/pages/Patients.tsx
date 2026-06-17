@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Trash2, X, Edit2, User } from 'lucide-react';
 import axios from 'axios';
+import { maskCPF, maskPhone, maskDate, maskName } from '../utils/masks';
+import { isValidCPF, isValidDate, isFutureDate } from '../utils/validators';
 
 interface Patient {
   id: string;
@@ -9,6 +11,7 @@ interface Patient {
   cpf: string;
   phone: string;
   dateOfBirth: string;
+  clinicalNotes?: string;
 }
 
 const Patients: React.FC = () => {
@@ -19,11 +22,11 @@ const Patients: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [formData, setFormData] = useState({ name: '', cpf: '', dateOfBirth: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '' });
 
   const openNewModal = () => {
     setEditId(null);
-    setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '' });
+    setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '' });
     setShowModal(true);
   };
 
@@ -32,8 +35,9 @@ const Patients: React.FC = () => {
     setFormData({ 
       name: p.name, 
       cpf: p.cpf, 
-      dateOfBirth: p.dateOfBirth ? p.dateOfBirth.split('T')[0] : '', 
-      phone: p.phone 
+      dateOfBirth: p.dateOfBirth ? p.dateOfBirth.split('T')[0].split('-').reverse().join('/') : '', 
+      phone: p.phone,
+      clinicalNotes: p.clinicalNotes || ''
     });
     setShowModal(true);
   };
@@ -56,23 +60,56 @@ const Patients: React.FC = () => {
   useEffect(() => { fetchPatients(); }, [search]);
 
   const handleSave = async () => {
+    if (!formData.name || !formData.cpf || !formData.phone || !formData.dateOfBirth) {
+      showToast('Preencha todos os campos obrigatórios.', 'error');
+      return;
+    }
+
+    if (formData.name.trim().split(' ').length < 2) {
+      showToast('Digite nome e sobrenome.', 'error');
+      return;
+    }
+
+    if (!isValidCPF(formData.cpf)) {
+      showToast('CPF inválido.', 'error');
+      return;
+    }
+
+    if (formData.phone.length < 14) {
+      showToast('Telefone inválido.', 'error');
+      return;
+    }
+
+    if (!isValidDate(formData.dateOfBirth)) {
+      showToast('Data de nascimento inválida.', 'error');
+      return;
+    }
+
+    if (isFutureDate(formData.dateOfBirth)) {
+      showToast('Data de nascimento não pode ser no futuro.', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
+      const [day, month, year] = formData.dateOfBirth.split('/');
+      const payload = { ...formData, dateOfBirth: `${year}-${month}-${day}` };
+
       if (editId) {
-        await axios.put(`http://localhost:3000/api/patients/${editId}`, formData, {
+        await axios.put(`http://localhost:3000/api/patients/${editId}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         showToast('Paciente atualizado com sucesso!', 'success');
       } else {
-        await axios.post('http://localhost:3000/api/patients', formData, {
+        await axios.post('http://localhost:3000/api/patients', payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         showToast('Paciente cadastrado com sucesso!', 'success');
       }
       setShowModal(false);
       setEditId(null);
-      setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '' });
+      setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '' });
       fetchPatients();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Erro ao salvar.', 'error');
@@ -155,28 +192,29 @@ const Patients: React.FC = () => {
                   <td>{p.cpf}</td>
                   <td>{p.phone}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <button
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366F1', padding: '6px', marginRight: '4px' }}
-                      onClick={() => navigate(`/dashboard/patients/${p.id}`)}
-                      title="Ver Perfil"
-                    >
-                      <User size={15} />
-                    </button>
-                    <button
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '6px', marginRight: '4px' }}
-                      onClick={() => openEditModal(p)}
-                      title="Editar paciente"
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                    <button
-                      className="btn-icon"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '6px' }}
-                      onClick={() => handleDelete(p.id)}
-                      title="Inativar paciente"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="actions-group">
+                      <button
+                        className="action-btn blue"
+                        onClick={() => navigate(`/dashboard/patients/${p.id}`)}
+                        title="Ver Perfil"
+                      >
+                        <User size={15} />
+                      </button>
+                      <button
+                        className="action-btn green"
+                        onClick={() => openEditModal(p)}
+                        title="Editar paciente"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button
+                        className="action-btn red"
+                        onClick={() => handleDelete(p.id)}
+                        title="Inativar paciente"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -196,19 +234,34 @@ const Patients: React.FC = () => {
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Nome Completo *</label>
-                <input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Ex: João da Silva" />
+                <input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: maskName(e.target.value) })} placeholder="Ex: João da Silva" />
               </div>
               <div className="form-group">
                 <label className="form-label">CPF *</label>
-                <input type="text" className="form-input" value={formData.cpf} onChange={(e) => setFormData({ ...formData, cpf: e.target.value })} placeholder="000.000.000-00" />
+                <input type="text" className="form-input" value={formData.cpf} onChange={(e) => setFormData({ ...formData, cpf: maskCPF(e.target.value) })} placeholder="000.000.000-00" />
               </div>
               <div className="form-group">
                 <label className="form-label">Data de Nascimento *</label>
-                <input type="date" className="form-input" value={formData.dateOfBirth} onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })} />
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="DD/MM/AAAA"
+                  value={formData.dateOfBirth} 
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: maskDate(e.target.value) })} 
+                />
               </div>
               <div className="form-group">
                 <label className="form-label">Telefone *</label>
-                <input type="text" className="form-input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(00) 00000-0000" />
+                <input type="text" className="form-input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: maskPhone(e.target.value) })} placeholder="(00) 00000-0000" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Anotações Clínicas (Opcional)</label>
+                <textarea 
+                  className="form-textarea" 
+                  value={formData.clinicalNotes} 
+                  onChange={(e) => setFormData({ ...formData, clinicalNotes: e.target.value })} 
+                  placeholder="Alergias, observações importantes, histórico..." 
+                />
               </div>
             </div>
             <div className="modal-footer">

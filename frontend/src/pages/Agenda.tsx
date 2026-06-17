@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Check, X, Edit2, UserMinus, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Check, X, Edit2, UserMinus, CheckCircle2, ChevronDown } from 'lucide-react';
 import axios from 'axios';
+import { maskCurrency, maskNumber, parseCurrency } from '../utils/masks';
 
 interface Appointment {
   id: string;
@@ -26,6 +27,73 @@ const statusBadge = (status: string) => {
 
 const formatTime = (iso: string) => {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+};
+
+const SearchableSelect = ({ options, value, onChange, placeholder }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  
+  const selectedOption = options.find((o: any) => o.id === value);
+  const filteredOptions = options.filter((o: any) => o.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <div 
+        className="form-input"
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span style={{ color: selectedOption ? 'inherit' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {selectedOption ? selectedOption.name : placeholder}
+        </span>
+        <ChevronDown size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+      </div>
+      
+      {isOpen && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setIsOpen(false)} />
+          <div style={{
+            position: 'absolute', top: 'calc(100% + 4px)', left: 0, width: '100%',
+            background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+            zIndex: 1000, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column'
+          }}>
+            <div style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>
+              <input 
+                autoFocus
+                type="text" 
+                className="form-input" 
+                placeholder="Buscar..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ width: '100%', padding: '6px 10px' }}
+              />
+            </div>
+            <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+              {filteredOptions.length === 0 ? (
+                <div style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--text-muted)' }}>Nenhum resultado</div>
+              ) : (
+                filteredOptions.map((o: any) => (
+                  <div 
+                    key={o.id}
+                    style={{ 
+                      padding: '8px 12px', cursor: 'pointer', fontSize: '13.5px',
+                      background: value === o.id ? 'var(--bg)' : 'transparent',
+                      color: 'var(--text-primary)'
+                    }}
+                    onClick={() => { onChange(o.id); setIsOpen(false); setSearch(''); }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg)'}
+                    onMouseLeave={(e) => { if (value !== o.id) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    {o.name}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
 const Agenda: React.FC = () => {
@@ -61,7 +129,7 @@ const Agenda: React.FC = () => {
       time: timeString,
       durationInMinutes: appt.durationInMinutes,
       serviceType: appt.serviceType || '',
-      price: appt.price || ''
+      price: appt.price ? maskCurrency(appt.price.toFixed(2).replace('.', '')) : ''
     });
     setShowModal(true);
   };
@@ -108,6 +176,11 @@ const Agenda: React.FC = () => {
   const goToday = () => setCurrentDate(todayStr);
 
   const handleSave = async () => {
+    if (!formData.patientId || !formData.dentistId || !formData.time || !formData.durationInMinutes) {
+      showToast('Preencha todos os campos obrigatórios.', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -117,7 +190,7 @@ const Agenda: React.FC = () => {
         date: `${currentDate}T${formData.time}:00.000Z`,
         durationInMinutes: Number(formData.durationInMinutes),
         serviceType: formData.serviceType,
-        price: formData.price ? Number(formData.price.toString().replace(',', '.')) : 0,
+        price: formData.price ? parseCurrency(formData.price) : 0,
       };
 
       if (editId) {
@@ -223,48 +296,85 @@ const Agenda: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   {statusBadge(appt.status)}
                   {appt.status !== 'CANCELED' && appt.status !== 'COMPLETED' && appt.status !== 'NO_SHOW' && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {/* Botão de Editar Isolado */}
                       <button
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}
+                        style={{ 
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: 'var(--blue-bg)', color: 'var(--primary)', 
+                          border: '1px solid var(--blue-border)', borderRadius: '6px', 
+                          padding: '6px', cursor: 'pointer', transition: 'all 0.2s'
+                        }}
                         onClick={() => openEditModal(appt)}
                         title="Editar"
                       >
                         <Edit2 size={16} />
                       </button>
 
-                      {appt.status === 'SCHEDULED' && (
+                      {/* Grupo de Ações de Status */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: '4px',
+                        background: 'var(--bg)', border: '1px solid var(--border)',
+                        padding: '4px', borderRadius: '8px'
+                      }}>
+                        {appt.status === 'SCHEDULED' && (
+                          <button
+                            style={{ 
+                              background: 'transparent', border: 'none', cursor: 'pointer', 
+                              color: 'var(--purple)', padding: '6px', borderRadius: '4px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.background = 'var(--purple-bg)'}
+                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                            onClick={() => updateStatus(appt.id, 'CONFIRMED')}
+                            title="Marcar como Confirmada"
+                          >
+                            <Check size={16} />
+                          </button>
+                        )}
+
                         <button
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B5CF6' }}
-                          onClick={() => updateStatus(appt.id, 'CONFIRMED')}
-                          title="Confirmar"
+                          style={{ 
+                            background: 'transparent', border: 'none', cursor: 'pointer', 
+                            color: 'var(--green)', padding: '6px', borderRadius: '4px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'var(--green-bg)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                          onClick={() => updateStatus(appt.id, 'COMPLETED')}
+                          title="Marcar como Realizada"
                         >
-                          <Check size={16} />
+                          <CheckCircle2 size={16} />
                         </button>
-                      )}
 
-                      <button
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#10B981' }}
-                        onClick={() => updateStatus(appt.id, 'COMPLETED')}
-                        title="Realizada"
-                      >
-                        <CheckCircle2 size={16} />
-                      </button>
+                        <button
+                          style={{ 
+                            background: 'transparent', border: 'none', cursor: 'pointer', 
+                            color: 'var(--amber)', padding: '6px', borderRadius: '4px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'var(--amber-bg)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                          onClick={() => updateStatus(appt.id, 'NO_SHOW')}
+                          title="Marcar como Faltou"
+                        >
+                          <UserMinus size={16} />
+                        </button>
 
-                      <button
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#F59E0B' }}
-                        onClick={() => updateStatus(appt.id, 'NO_SHOW')}
-                        title="Faltou"
-                      >
-                        <UserMinus size={16} />
-                      </button>
-
-                      <button
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444' }}
-                        onClick={() => updateStatus(appt.id, 'CANCELED')}
-                        title="Cancelar"
-                      >
-                        <X size={16} />
-                      </button>
+                        <button
+                          style={{ 
+                            background: 'transparent', border: 'none', cursor: 'pointer', 
+                            color: 'var(--red)', padding: '6px', borderRadius: '4px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'var(--red-bg)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                          onClick={() => updateStatus(appt.id, 'CANCELED')}
+                          title="Cancelar Consulta"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -285,17 +395,21 @@ const Agenda: React.FC = () => {
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Paciente *</label>
-                <select className="form-select" value={formData.patientId} onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}>
-                  <option value="">Selecione...</option>
-                  {patients.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                <SearchableSelect 
+                  options={patients} 
+                  value={formData.patientId} 
+                  onChange={(val: string) => setFormData({ ...formData, patientId: val })} 
+                  placeholder="Buscar paciente..." 
+                />
               </div>
               <div className="form-group">
                 <label className="form-label">Dentista *</label>
-                <select className="form-select" value={formData.dentistId} onChange={(e) => setFormData({ ...formData, dentistId: e.target.value })}>
-                  <option value="">Selecione...</option>
-                  {dentists.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
+                <SearchableSelect 
+                  options={dentists} 
+                  value={formData.dentistId} 
+                  onChange={(val: string) => setFormData({ ...formData, dentistId: val })} 
+                  placeholder="Buscar dentista..." 
+                />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
@@ -304,7 +418,7 @@ const Agenda: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Duração (min)</label>
-                  <input type="number" className="form-input" step="15" value={formData.durationInMinutes} onChange={(e) => setFormData({ ...formData, durationInMinutes: Number(e.target.value) })} />
+                  <input type="text" className="form-input" value={formData.durationInMinutes} onChange={(e) => setFormData({ ...formData, durationInMinutes: Number(maskNumber(e.target.value)) })} />
                 </div>
               </div>
               <div className="form-group">
@@ -315,11 +429,11 @@ const Agenda: React.FC = () => {
                 <label className="form-label">Valor / Preço (R$)</label>
                 <input 
                   type="text" 
-                  inputMode="decimal" 
+                  inputMode="numeric" 
                   className="form-input" 
-                  placeholder="0.00" 
+                  placeholder="0,00" 
                   value={formData.price} 
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value.replace(/[^0-9.,]/g, '') })} 
+                  onChange={(e) => setFormData({ ...formData, price: maskCurrency(e.target.value) })} 
                 />
               </div>
             </div>

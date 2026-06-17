@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, X, Edit2 } from 'lucide-react';
+import { Plus, Search, Trash2, X, Edit2, ChevronDown } from 'lucide-react';
 import axios from 'axios';
+import { maskPhone, maskName, maskCRO } from '../utils/masks';
+import { isValidCRO } from '../utils/validators';
 
 interface Dentist {
   id: string;
@@ -10,6 +12,8 @@ interface Dentist {
   phone: string;
 }
 
+const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+
 const Dentists: React.FC = () => {
   const [dentists, setDentists] = useState<Dentist[]>([]);
   const [search, setSearch] = useState('');
@@ -17,19 +21,28 @@ const Dentists: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [formData, setFormData] = useState({ name: '', cro: '', specialties: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', cro_uf: 'SP', cro_number: '', specialties: '', phone: '' });
+  const [showUfDropdown, setShowUfDropdown] = useState(false);
 
   const openNewModal = () => {
     setEditId(null);
-    setFormData({ name: '', cro: '', specialties: '', phone: '' });
+    setFormData({ name: '', cro_uf: 'SP', cro_number: '', specialties: '', phone: '' });
     setShowModal(true);
   };
 
   const openEditModal = (d: Dentist) => {
     setEditId(d.id);
+    let uf = 'SP';
+    let num = d.cro.replace(/\D/g, '');
+    const match = d.cro.match(/CRO[- ]?([A-Z]{2})[- ]?(\d+)/i);
+    if (match) {
+      uf = match[1].toUpperCase();
+      num = match[2];
+    }
     setFormData({ 
       name: d.name, 
-      cro: d.cro, 
+      cro_uf: uf,
+      cro_number: num,
       specialties: d.specialties || '', 
       phone: d.phone 
     });
@@ -54,23 +67,52 @@ const Dentists: React.FC = () => {
   useEffect(() => { fetchDentists(); }, [search]);
 
   const handleSave = async () => {
+    const croFinal = `CRO-${formData.cro_uf} ${formData.cro_number}`;
+
+    if (!formData.name || !formData.cro_number || !formData.phone) {
+      showToast('Preencha todos os campos obrigatórios.', 'error');
+      return;
+    }
+
+    if (!isValidCRO(croFinal)) {
+      showToast('CRO inválido. Formato esperado: CRO-UF 12345', 'error');
+      return;
+    }
+
+    if (formData.name.trim().split(' ').length < 2) {
+      showToast('Digite nome e sobrenome.', 'error');
+      return;
+    }
+
+    if (formData.phone.length < 14) {
+      showToast('Telefone inválido.', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
+      const payload = {
+        name: formData.name,
+        cro: croFinal,
+        specialties: formData.specialties,
+        phone: formData.phone
+      };
+
       const token = localStorage.getItem('token');
       if (editId) {
-        await axios.put(`http://localhost:3000/api/dentists/${editId}`, formData, {
+        await axios.put(`http://localhost:3000/api/dentists/${editId}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         showToast('Dentista atualizado com sucesso!', 'success');
       } else {
-        await axios.post('http://localhost:3000/api/dentists', formData, {
+        await axios.post('http://localhost:3000/api/dentists', payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         showToast('Dentista cadastrado com sucesso!', 'success');
       }
       setShowModal(false);
       setEditId(null);
-      setFormData({ name: '', cro: '', specialties: '', phone: '' });
+      setFormData({ name: '', cro_uf: 'SP', cro_number: '', specialties: '', phone: '' });
       fetchDentists();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Erro ao salvar.', 'error');
@@ -155,20 +197,22 @@ const Dentists: React.FC = () => {
                   <td>{d.specialties || <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                   <td>{d.phone}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <button
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '6px', marginRight: '4px' }}
-                      onClick={() => openEditModal(d)}
-                      title="Editar dentista"
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                    <button
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '6px' }}
-                      onClick={() => handleDelete(d.id)}
-                      title="Inativar dentista"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="actions-group">
+                      <button
+                        className="action-btn green"
+                        onClick={() => openEditModal(d)}
+                        title="Editar dentista"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button
+                        className="action-btn red"
+                        onClick={() => handleDelete(d.id)}
+                        title="Inativar dentista"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -188,11 +232,73 @@ const Dentists: React.FC = () => {
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Nome Completo *</label>
-                <input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Dr. João Silva" />
+                <input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: maskName(e.target.value) })} placeholder="Dr. João Silva" />
               </div>
               <div className="form-group">
                 <label className="form-label">CRO *</label>
-                <input type="text" className="form-input" value={formData.cro} onChange={(e) => setFormData({ ...formData, cro: e.target.value })} placeholder="CRO-SP 12345" />
+                <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                  <div style={{ position: 'relative', flex: '0 0 110px' }}>
+                    <div 
+                      className="form-input"
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', height: '100%' }}
+                      onClick={() => setShowUfDropdown(!showUfDropdown)}
+                    >
+                      <span>CRO-{formData.cro_uf}</span>
+                      <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+                    </div>
+                    {showUfDropdown && (
+                      <>
+                        <div 
+                          style={{ position: 'fixed', inset: 0, zIndex: 999 }} 
+                          onClick={() => setShowUfDropdown(false)} 
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 4px)',
+                          left: 0,
+                          width: '100%',
+                          maxHeight: '160px',
+                          overflowY: 'auto',
+                          background: 'var(--card-bg)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius)',
+                          zIndex: 1000,
+                          boxShadow: 'var(--shadow-sm)',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          {UFS.map(uf => (
+                            <div 
+                              key={uf}
+                              style={{ 
+                                padding: '8px 12px', 
+                                cursor: 'pointer',
+                                fontSize: '13.5px',
+                                color: 'var(--text-primary)',
+                                background: formData.cro_uf === uf ? 'var(--bg)' : 'transparent'
+                              }}
+                              onClick={() => { setFormData({...formData, cro_uf: uf}); setShowUfDropdown(false); }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg)'}
+                              onMouseLeave={(e) => {
+                                if (formData.cro_uf !== uf) e.currentTarget.style.background = 'transparent';
+                              }}
+                            >
+                              CRO-{uf}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    style={{ flex: '1', minWidth: '0' }}
+                    value={formData.cro_number} 
+                    onChange={(e) => setFormData({ ...formData, cro_number: e.target.value.replace(/\D/g, '').slice(0, 6) })} 
+                    placeholder="Somente números" 
+                  />
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Especialidades</label>
@@ -200,7 +306,7 @@ const Dentists: React.FC = () => {
               </div>
               <div className="form-group">
                 <label className="form-label">Telefone *</label>
-                <input type="text" className="form-input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(00) 00000-0000" />
+                <input type="text" className="form-input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: maskPhone(e.target.value) })} placeholder="(00) 00000-0000" />
               </div>
             </div>
             <div className="modal-footer">

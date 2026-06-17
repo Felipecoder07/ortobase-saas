@@ -1,0 +1,52 @@
+# Análise do Sistema e Funcionalidades Faltantes
+
+Fizemos uma análise detalhada da base do sistema atual (tanto no banco de dados quanto nas páginas do frontend). O sistema já tem uma base muito sólida com:
+- Autenticação e Multi-tenant
+- Cadastro de Pacientes e Dentistas
+- Agenda de Consultas
+- Gestão Financeira básica (Pagamentos)
+- Dashboard de métricas
+
+No entanto, para que o sistema seja realmente utilizável no dia a dia de uma clínica odontológica e se destaque (seja "bom para uso" comercial), algumas funcionalidades vitais estão faltando.
+
+## Funcionalidades Críticas Faltantes (MVP)
+
+Abaixo listo o que considero essencial para completarmos a experiência de uso:
+
+### 1. Prontuário Eletrônico e Plano de Tratamento (EHR)
+Atualmente o paciente só tem um campo de texto livre de "Anotações Clínicas". Em uma clínica real precisamos de:
+- **Anamnese:** Formulário padronizado de saúde (alergias a medicamentos, doenças pré-existentes, etc).
+- **Odontograma Gráfico:** Uma representação visual dos dentes (adulto e decíduo) onde o dentista possa clicar em dentes/faces específicos para registrar cáries, extrações ou procedimentos realizados.
+- **Orçamentos / Plano de Tratamento:** Capacidade de orçar múltiplos procedimentos para o paciente aprovar antes de iniciar.
+- **Anexos:** Upload de exames, radiografias e fotos do paciente.
+
+### 2. Tabela de Procedimentos
+O agendamento atual aceita um texto livre em `serviceType`. Para uma gestão financeira correta, precisamos:
+- Um CRUD de **Procedimentos Odontológicos** (ex: Limpeza, Extração, Implante) com valores padrão pré-definidos.
+- Os orçamentos e agendamentos devem consumir dessa tabela.
+
+### 3. Comissionamento de Dentistas (Financeiro Avançado)
+A maioria das clínicas funciona repassando uma porcentagem do valor ao dentista que executou o serviço.
+- Adicionar regras de comissão (ex: Dr. João ganha 40% dos tratamentos).
+- Relatório financeiro mostrando o repasse a ser feito para cada dentista no mês.
+
+### 4. Gestão de Estoque (Básico)
+Gerenciar insumos é fundamental em clínicas para evitar que faltem materiais no meio de um procedimento.
+- Cadastro de materiais (Resina, Luvas, Anestésicos).
+- Controle de entrada/saída e alertas de estoque mínimo.
+
+### 5. Configurações da Clínica
+- **Horário de Funcionamento:** Definir dias úteis e horários da clínica para bloquear a agenda de marcações fora do expediente.
+
+## User Review Required
+
+> [!IMPORTANT]
+> Precisamos definir qual o próximo passo e focar em uma funcionalidade por vez. 
+> 
+> **Recomendação:** O **Prontuário Eletrônico (Odontograma e Orçamentos)** e a **Tabela de Procedimentos** são o coração de um sistema odontológico. Se um dentista não consegue registrar visualmente o que fez na boca do paciente, ele não vai usar o sistema.
+
+## Open Questions
+
+1. Você concorda com as funcionalidades listadas acima?
+2. Gostaria de focar no **Prontuário / Odontograma e Procedimentos** agora como nossa próxima grande feature?
+3. Há alguma funcionalidade que você considera urgente e que não listei aqui?
