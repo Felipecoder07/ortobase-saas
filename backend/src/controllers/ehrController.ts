@@ -226,7 +226,8 @@ export const updateToothCondition = async (req: Request, res: Response) => {
 
     return res.json(upsertedCondition);
   } catch (error) {
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('Error updating tooth condition:', error);
+    return res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -291,6 +292,207 @@ export const deleteAttachment = async (req: Request, res: Response) => {
     });
 
     return res.status(204).send();
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// --- ASSINATURAS DIGITAIS ---
+import fs from 'fs';
+import path from 'path';
+
+const saveBase64Image = (base64String: string, filenamePrefix: string): string => {
+  const matches = base64String.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) {
+    throw new Error('Invalid base64 string');
+  }
+
+  const imageBuffer = Buffer.from(matches[2], 'base64');
+  const filename = `${filenamePrefix}-${Date.now()}.png`;
+  const uploadDir = path.join(__dirname, '../../uploads/signatures');
+  
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const filePath = path.join(uploadDir, filename);
+  fs.writeFileSync(filePath, imageBuffer);
+
+  return `/uploads/signatures/${filename}`;
+};
+
+export const signAnamnesis = async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { patientId } = req.params;
+    const { signatureDataUrl } = req.body;
+
+    if (!signatureDataUrl) return res.status(400).json({ error: 'Signature data is required' });
+
+    const signatureUrl = saveBase64Image(signatureDataUrl, `anamnesis-${patientId}`);
+
+    const anamnesis = await prisma.anamnesis.upsert({
+      where: { patientId },
+      update: {
+        signatureUrl,
+        signedAt: new Date()
+      },
+      create: {
+        tenantId,
+        patientId,
+        signatureUrl,
+        signedAt: new Date()
+      }
+    });
+
+    return res.json(anamnesis);
+  } catch (error) {
+    console.error('Error signing anamnesis:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const unlockAnamnesis = async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { patientId } = req.params;
+
+    const anamnesis = await prisma.anamnesis.update({
+      where: { patientId },
+      data: {
+        signatureUrl: null,
+        signedAt: null
+      }
+    });
+
+    return res.json(anamnesis);
+  } catch (error) {
+    console.error('Error unlocking anamnesis:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const signTreatmentPlan = async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { planId } = req.params;
+    const { signatureDataUrl } = req.body;
+
+    if (!signatureDataUrl) return res.status(400).json({ error: 'Signature data is required' });
+
+    const signatureUrl = saveBase64Image(signatureDataUrl, `plan-${planId}`);
+
+    const plan = await prisma.treatmentPlan.update({
+      where: { id: planId, tenantId },
+      data: {
+        signatureUrl,
+        signedAt: new Date()
+      }
+    });
+
+    return res.json(plan);
+  } catch (error) {
+    console.error('Error signing treatment plan:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getOdontogramLegends = async (req: AuthRequest, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const legends = await prisma.odontogramLegend.findMany({
+      where: { tenantId: tenantId! }
+    });
+    return res.json(legends);
+  } catch (error) {
+    console.error('Error getting odontogram legends:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const addOdontogramLegend = async (req: AuthRequest, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { name, color } = req.body;
+    
+    if (!name || !color) return res.status(400).json({ error: 'Name and color are required' });
+
+    const existing = await prisma.odontogramLegend.findUnique({
+      where: { tenantId_name: { tenantId: tenantId!, name } }
+    });
+
+    if (existing) {
+      const updated = await prisma.odontogramLegend.update({
+        where: { id: existing.id },
+        data: { color }
+      });
+      return res.json(updated);
+    }
+
+    const legend = await prisma.odontogramLegend.create({
+      data: {
+        tenantId: tenantId!,
+        name,
+        color
+      }
+    });
+    return res.json(legend);
+  } catch (error) {
+    console.error('Error adding odontogram legend:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const deleteOdontogramLegend = async (req: AuthRequest, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { name } = req.params;
+
+    // Remove conditions matching this legend name
+    await prisma.toothCondition.deleteMany({
+      where: { tenantId: tenantId!, condition: name }
+    });
+
+    // Remove the legend
+    await prisma.odontogramLegend.deleteMany({
+      where: { tenantId: tenantId!, name }
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting odontogram legend:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// In-memory map for mobile signatures
+const mobileSignatures = new Map<string, string>();
+
+export const receiveMobileSignature = async (req: Request, res: Response) => {
+  try {
+    const { token, signatureDataUrl } = req.body;
+    if (!token || !signatureDataUrl) return res.status(400).json({ error: 'Missing token or signature' });
+    mobileSignatures.set(token, signatureDataUrl);
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const pollMobileSignature = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    if (mobileSignatures.has(token)) {
+      const signatureDataUrl = mobileSignatures.get(token);
+      mobileSignatures.delete(token); // Clear once retrieved
+      return res.json({ signatureDataUrl });
+    }
+    return res.status(202).json({ status: 'pending' });
   } catch (error) {
     return res.status(500).json({ error: 'Internal server error' });
   }

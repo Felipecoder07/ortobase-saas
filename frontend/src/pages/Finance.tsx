@@ -1,12 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, AlertCircle, UserX, MessageCircle, RefreshCw, X, Tag } from 'lucide-react';
-import axios from 'axios';
+import { DollarSign, AlertCircle, UserX, MessageCircle, RefreshCw, X, Tag, Download } from 'lucide-react';
+import api from '../utils/api';
+import { useToast } from '../contexts/ToastContext';
 import { maskCurrency, parseCurrency } from '../utils/masks';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+
+const CHART_COLORS: Record<string, string> = {
+  SCHEDULED: '#3b82f6',
+  CONFIRMED: '#8b5cf6',
+  COMPLETED: '#10b981',
+  CANCELED: '#ef4444',
+  NO_SHOW: '#f59e0b'
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  SCHEDULED: 'Agendada',
+  CONFIRMED: 'Confirmada',
+  COMPLETED: 'Realizada',
+  CANCELED: 'Cancelada',
+  NO_SHOW: 'Faltou'
+};
 
 const Finance: React.FC = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [defaulters, setDefaulters] = useState<any[]>([]);
   const [reports, setReports] = useState({ daily: 0, monthly: 0, yearly: 0 });
+  const [advancedMetrics, setAdvancedMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'paid' | 'reports'>('pending');
   const [reportMonth, setReportMonth] = useState(() => {
@@ -21,25 +40,20 @@ const Finance: React.FC = () => {
   const [refundReason, setRefundReason] = useState('');
   const [payForm, setPayForm] = useState<{method: string, amount: number | string, serviceType: string, installments: number}>({ method: 'PIX', amount: '', serviceType: '', installments: 1 });
 
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-
-  const showToast = (msg: string, type: 'success' | 'error') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
+  const { showToast } = useToast();
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      const [apptRes, defRes, repRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/appointments', { headers }),
-        axios.get(`http://localhost:3000/api/finance/defaulters?month=${reportMonth}`, { headers }),
-        axios.get(`http://localhost:3000/api/finance/reports?month=${reportMonth}`, { headers }),
+      const [apptRes, defRes, repRes, metricsRes] = await Promise.all([
+        api.get('/appointments'),
+        api.get(`/finance/defaulters?month=${reportMonth}`),
+        api.get(`/finance/reports?month=${reportMonth}`),
+        api.get(`/finance/dashboard-metrics?month=${reportMonth}`)
       ]);
       setAppointments(apptRes.data);
       setDefaulters(defRes.data);
       setReports(repRes.data);
+      setAdvancedMetrics(metricsRes.data);
     } catch (err) { console.error(err); }
   };
 
@@ -66,14 +80,13 @@ const Finance: React.FC = () => {
     }
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3000/api/finance', {
+      await api.post('/finance', {
         appointmentId: selectedAppt.id,
         method: payForm.method,
         amount: amount,
         serviceType: payForm.serviceType,
         installments: Number(payForm.installments),
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       showToast('Pagamento registrado!', 'success');
       setShowPayModal(false);
       fetchData();
@@ -86,11 +99,7 @@ const Finance: React.FC = () => {
     if (!refundReason) { showToast('A justificativa é obrigatória.', 'error'); return; }
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:3000/api/finance/${refundAppt.payment.id}/refund`,
-        { refundReason },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post(`/finance/${refundAppt.payment.id}/refund`, { refundReason });
       showToast('Estorno realizado!', 'success');
       setShowRefundModal(false);
       setRefundReason('');
@@ -102,10 +111,7 @@ const Finance: React.FC = () => {
 
   const handleSendReceipt = async (paymentId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:3000/api/finance/${paymentId}/receipt`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.post(`/finance/${paymentId}/receipt`, {});
       showToast('Comprovante enviado via WhatsApp!', 'success');
     } catch { showToast('Erro ao enviar comprovante.', 'error'); }
   };
@@ -132,22 +138,47 @@ const Finance: React.FC = () => {
     return <span className="badge badge-amber">● Pendente</span>;
   };
 
+  const exportToCSV = async (type: 'day' | 'month') => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const endpoint = type === 'day' ? `/appointments?date=${today}` : '/appointments';
+      const res = await api.get(endpoint);
+      const data = res.data;
+      if (!data || data.length === 0) return showToast('Nenhum dado para exportar.', 'error');
+      
+      const headers = ['Data/Hora', 'Paciente', 'Telefone', 'Dentista', 'Serviço', 'Status', 'Valor', 'Pago?'];
+      const rows = data.map((a: any) => [
+        new Date(a.date).toLocaleString('pt-BR'),
+        a.patient.name,
+        a.patient.phone,
+        a.dentist.name,
+        a.serviceType,
+        STATUS_LABELS[a.status] || a.status,
+        a.price || 0,
+        a.payment ? 'Sim' : 'Não'
+      ]);
+      
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((r: any) => r.map((c: any) => `"${c}"`).join(','))
+      ].join('\n');
+      
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `relatorio_${type === 'day' ? 'diario' : 'mensal'}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error(e);
+      showToast('Erro ao exportar CSV', 'error');
+    }
+  };
+
   return (
     <div>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
-          background: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
-          border: `1px solid ${toast.type === 'success' ? '#BBF7D0' : '#FECACA'}`,
-          color: toast.type === 'success' ? '#15803D' : '#B91C1C',
-          padding: '12px 16px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 500,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        }}>
-          {toast.msg}
-        </div>
-      )}
-
       {/* Metric cards */}
       <div className="grid-3 mb-6">
         <div className="metric-card green">
@@ -295,13 +326,24 @@ const Finance: React.FC = () => {
         {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
               <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>Visão Geral do Período</h2>
-              <div style={{ 
-                display: 'flex', alignItems: 'center', gap: '12px', 
-                background: 'var(--bg)', border: '1px solid var(--border)', 
-                padding: '6px 12px', borderRadius: '8px'
-              }}>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => exportToCSV('day')} style={{ gap: '4px' }}>
+                    <Download size={13} /> CSV do Dia
+                  </button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => exportToCSV('month')} style={{ gap: '4px' }}>
+                    <Download size={13} /> CSV do Mês
+                  </button>
+                </div>
+
+                <div style={{ 
+                  display: 'flex', alignItems: 'center', gap: '12px', 
+                  background: 'var(--bg)', border: '1px solid var(--border)', 
+                  padding: '6px 12px', borderRadius: '8px'
+                }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                   Filtrar Mês:
                 </span>
@@ -338,6 +380,7 @@ const Finance: React.FC = () => {
                   </select>
                 </div>
               </div>
+            </div>
             </div>
             <div className="grid-2">
               {/* Resumo */}
@@ -381,6 +424,61 @@ const Finance: React.FC = () => {
                 )}
               </div>
             </div>
+
+            {/* Advanced Charts Row */}
+            {advancedMetrics && (
+              <div className="grid-2" style={{ marginTop: '24px' }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px', textAlign: 'center' }}>Distribuição de Status (Consultas)</h3>
+                  <div style={{ width: '100%', height: '240px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={advancedMetrics.appointmentsByStatus.map((d: any) => ({ ...d, name: STATUS_LABELS[d.name] || d.name }))}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          stroke="none"
+                        >
+                          {advancedMetrics.appointmentsByStatus.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={CHART_COLORS[entry.name] || '#ccc'} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip 
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px', textAlign: 'center' }}>Adimplência vs Inadimplência</h3>
+                  <div style={{ width: '100%', height: '240px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[
+                        { name: 'Pagas', value: advancedMetrics.financialMetrics.paidCount, fill: '#10b981' },
+                        { name: 'Pendentes/Inadimplentes', value: advancedMetrics.financialMetrics.unpaidCount, fill: '#ef4444' }
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#cbd5e1" />
+                        <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <YAxis allowDecimals={false} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <RechartsTooltip 
+                          cursor={{fill: '#f1f5f9'}}
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                        />
+                        <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={60} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
       </div>

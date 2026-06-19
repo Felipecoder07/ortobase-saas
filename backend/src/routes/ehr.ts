@@ -30,24 +30,42 @@ import {
   updateToothCondition,
   getAttachments,
   uploadAttachment,
-  deleteAttachment
+  deleteAttachment,
+  signAnamnesis,
+  unlockAnamnesis,
+  signTreatmentPlan,
+  receiveMobileSignature,
+  pollMobileSignature,
+  getOdontogramLegends,
+  addOdontogramLegend,
+  deleteOdontogramLegend
 } from '../controllers/ehrController';
 
 const router = Router();
+
+// Rotas públicas para assinatura no celular
+router.post('/mobile-sign', receiveMobileSignature);
+router.get('/mobile-sign/:token', pollMobileSignature);
 
 router.use(authenticate);
 
 // Anamnese
 router.get('/patients/:patientId/anamnesis', getAnamnesis);
 router.post('/patients/:patientId/anamnesis', upsertAnamnesis); // Usado para criar ou atualizar
+router.post('/patients/:patientId/anamnesis/sign', signAnamnesis);
+router.post('/patients/:patientId/anamnesis/unlock', unlockAnamnesis);
 
 // Planos de Tratamento (Orçamentos)
 router.get('/patients/:patientId/treatment-plans', getTreatmentPlans);
 router.post('/patients/:patientId/treatment-plans', createTreatmentPlan);
 router.put('/treatment-plans/:planId/status', updateTreatmentPlanStatus);
 router.delete('/treatment-plans/:planId', deleteTreatmentPlan);
+router.post('/treatment-plans/:planId/sign', signTreatmentPlan);
 
 // Odontograma
+router.get('/odontogram-legends', getOdontogramLegends);
+router.post('/odontogram-legends', addOdontogramLegend);
+router.delete('/odontogram-legends/:name', deleteOdontogramLegend);
 router.get('/patients/:patientId/odontogram', getToothConditions);
 router.post('/patients/:patientId/odontogram', updateToothCondition);
 

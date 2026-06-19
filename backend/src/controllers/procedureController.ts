@@ -8,7 +8,8 @@ export const getProcedures = async (req: Request, res: Response) => {
 
     const procedures = await prisma.procedure.findMany({
       where: { tenantId, isActive: true },
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
+      take: 50
     });
 
     return res.json(procedures);

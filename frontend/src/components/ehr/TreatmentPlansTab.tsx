@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Plus, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import api from '../../utils/api';
+import { Plus, Trash2, CheckCircle, XCircle, FileSignature, Lock } from 'lucide-react';
+import SignatureModal from './SignatureModal';
 
 interface Procedure {
   id: string;
@@ -23,6 +24,8 @@ interface TreatmentPlan {
   totalAmount: number;
   discount: number;
   notes: string;
+  signatureUrl?: string | null;
+  signedAt?: string | null;
   createdAt: string;
   dentist: { name: string };
   items: Array<{
@@ -51,15 +54,15 @@ const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = ({ patientId, showTo
   const [discount, setDiscount] = useState<number>(0);
   const [notes, setNotes] = useState('');
 
+  const [signatureModalOpen, setSignatureModalOpen] = useState(false);
+  const [selectedPlanForSignature, setSelectedPlanForSignature] = useState<string | null>(null);
+
   const role = localStorage.getItem('role');
   const canEdit = role === 'DENTIST' || role === 'ADMIN';
 
   const fetchPlans = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:3000/api/ehr/patients/${patientId}/treatment-plans`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/ehr/patients/${patientId}/treatment-plans`);
       setPlans(res.data);
     } catch (err) {
       showToast('Erro ao carregar orçamentos.', 'error');
@@ -68,10 +71,7 @@ const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = ({ patientId, showTo
 
   const fetchProcedures = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:3000/api/procedures', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/procedures');
       setProcedures(res.data);
     } catch (err) {
       showToast('Erro ao carregar procedimentos.', 'error');
@@ -125,18 +125,15 @@ const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = ({ patientId, showTo
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
       const dentistId = localStorage.getItem('userId'); // Supondo que tem o userId no localStorage, ou o backend pega pelo token. 
       // NOTA: O backend do EHR que criamos não pegava userId pelo req.user.id de forma que passava pro corpo. Ele pegava `dentistId` do body. 
       // Vamos assumir que req.user?.id = dentistId no backend ou passamos vazio se o backend resolver. 
       // Para funcionar, vamos passar o userId logado (que salvamos no Login, mas caso não tenha, pegamos do localStorage).
-      await axios.post(`http://localhost:3000/api/ehr/patients/${patientId}/treatment-plans`, {
+      await api.post(`/ehr/patients/${patientId}/treatment-plans`, {
         items: newItems,
         discount,
         notes,
         dentistId: localStorage.getItem('userId') || undefined
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       showToast('Orçamento criado com sucesso!', 'success');
       setIsCreating(false);
@@ -153,15 +150,30 @@ const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = ({ patientId, showTo
 
   const updateStatus = async (planId: string, status: string) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:3000/api/ehr/treatment-plans/${planId}/status`, { status }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/ehr/treatment-plans/${planId}/status`, { status });
       showToast(`Status atualizado para ${status}`, 'success');
       fetchPlans();
     } catch (err) {
       showToast('Erro ao atualizar status.', 'error');
     }
+  };
+
+  const handleSignPlan = async (dataUrl: string) => {
+    if (!selectedPlanForSignature) return;
+    try {
+      await api.post(`/ehr/patients/${patientId}/treatment-plans/${selectedPlanForSignature}/sign`, { signatureDataUrl: dataUrl });
+      setSignatureModalOpen(false);
+      setSelectedPlanForSignature(null);
+      showToast('Orçamento assinado com sucesso!', 'success');
+      fetchPlans();
+    } catch (err) {
+      showToast('Erro ao salvar assinatura.', 'error');
+    }
+  };
+
+  const openSignatureModal = (planId: string) => {
+    setSelectedPlanForSignature(planId);
+    setSignatureModalOpen(true);
   };
 
   const totalAmount = newItems.reduce((acc, item) => acc + Number(item.price), 0);
@@ -300,8 +312,28 @@ const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = ({ patientId, showTo
                   </div>
                 )}
 
+                {plan.signatureUrl && (
+                  <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#92400E' }}>
+                      <Lock size={18} />
+                      <strong>Orçamento Assinado pelo Paciente</strong>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <img src={`http://${window.location.hostname}:3000${plan.signatureUrl}`} alt="Assinatura" style={{ maxHeight: '80px', backgroundColor: '#fff', padding: '4px', borderRadius: '4px', border: '1px solid #e2e8f0' }} />
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                        Assinado em: {plan.signedAt ? new Date(plan.signedAt).toLocaleString('pt-BR') : ''}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Actions for Status changes */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+                  {!plan.signatureUrl && plan.status !== 'REJECTED' && plan.status !== 'COMPLETED' && (
+                    <button className="btn btn-outline" onClick={() => openSignatureModal(plan.id)} style={{ color: 'var(--text-secondary)' }}>
+                      <FileSignature size={16} /> Coletar Assinatura
+                    </button>
+                  )}
                   {plan.status === 'PENDING' && (
                     <>
                       <button className="btn btn-ghost" onClick={() => updateStatus(plan.id, 'REJECTED')} style={{ color: '#EF4444' }}>
@@ -323,6 +355,14 @@ const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = ({ patientId, showTo
           ))}
         </div>
       )}
+
+      <SignatureModal 
+        isOpen={signatureModalOpen} 
+        onClose={() => { setSignatureModalOpen(false); setSelectedPlanForSignature(null); }} 
+        onSave={handleSignPlan} 
+        title="Assinatura do Orçamento" 
+        patientId={patientId}
+      />
     </div>
   );
 };

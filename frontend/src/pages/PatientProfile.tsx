@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, FileText, Activity, FileSignature, Save } from 'lucide-react';
-import axios from 'axios';
+import api from '../utils/api';
+import { useToast } from '../contexts/ToastContext';
 import AnamnesisTab from '../components/ehr/AnamnesisTab';
 import TreatmentPlansTab from '../components/ehr/TreatmentPlansTab';
 import OdontogramTab from '../components/ehr/OdontogramTab';
@@ -49,21 +50,13 @@ const PatientProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const { showToast } = useToast();
   
   const [activeTab, setActiveTab] = useState<TabType>('resumo');
 
-  const showToast = (msg: string, type: 'success' | 'error') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
-
   const fetchPatient = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:3000/api/patients/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/patients/${id}`);
       setPatient(res.data);
       setNotes(res.data.clinicalNotes || '');
     } catch (err) {
@@ -82,10 +75,8 @@ const PatientProfile: React.FC = () => {
     if (!patient) return;
     setSavingNotes(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:3000/api/patients/${patient.id}`, 
-        { ...patient, clinicalNotes: notes },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.put(`/patients/${patient.id}`, 
+        { ...patient, clinicalNotes: notes }
       );
       showToast('Anotações salvas!', 'success');
       setPatient({ ...patient, clinicalNotes: notes });
@@ -101,18 +92,7 @@ const PatientProfile: React.FC = () => {
 
   return (
     <div>
-      {toast && (
-        <div style={{
-          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
-          background: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
-          border: `1px solid ${toast.type === 'success' ? '#BBF7D0' : '#FECACA'}`,
-          color: toast.type === 'success' ? '#15803D' : '#B91C1C',
-          padding: '12px 16px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 500,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        }}>
-          {toast.msg}
-        </div>
-      )}
+      
 
       {/* Toolbar */}
       <div className="flex-between mb-4">

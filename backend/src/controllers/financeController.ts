@@ -236,3 +236,53 @@ export const getReports = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ error: 'Erro interno no servidor' });
   }
 };
+
+export const getDashboardMetrics = async (req: AuthRequest, res: Response) => {
+  try {
+    const { tenantId } = req.user!;
+    const { month } = req.query; // optional YYYY-MM
+
+    let whereClause: any = { tenantId };
+    
+    if (month) {
+      const year = parseInt((month as string).split('-')[0]);
+      const monthIndex = parseInt((month as string).split('-')[1]) - 1;
+      const startOfMonth = new Date(Date.UTC(year, monthIndex, 1, 0, 0, 0));
+      const endOfMonth = new Date(Date.UTC(year, monthIndex + 1, 0, 23, 59, 59, 999));
+      
+      whereClause.date = {
+        gte: startOfMonth,
+        lte: endOfMonth
+      };
+    }
+
+    const appointments = await prisma.appointment.findMany({
+      where: whereClause,
+      include: { payment: true }
+    });
+
+    // 1. Appointments by Status
+    const statusCounts: Record<string, number> = {};
+    appointments.forEach(app => {
+      statusCounts[app.status] = (statusCounts[app.status] || 0) + 1;
+    });
+
+    const appointmentsByStatus = Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
+
+    // 2. Financial Metrics (Inadimplência)
+    const completedApps = appointments.filter(a => a.status === 'COMPLETED');
+    const paidCompleted = completedApps.filter(a => a.payment !== null).length;
+    const unpaidCompleted = completedApps.filter(a => a.payment === null).length;
+
+    const financialMetrics = {
+      defaultRate: completedApps.length > 0 ? (unpaidCompleted / completedApps.length) * 100 : 0,
+      paidCount: paidCompleted,
+      unpaidCount: unpaidCompleted
+    };
+
+    return res.json({ appointmentsByStatus, financialMetrics });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro interno no servidor' });
+  }
+};

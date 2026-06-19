@@ -5,7 +5,7 @@ import prisma from '../prisma';
 export const createDentist = async (req: AuthRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
-    const { name, cro, specialties, phone, email } = req.body;
+    const { name, cro, specialties, phone, email, avatarUrl, gender } = req.body;
 
     const dentist = await prisma.dentist.create({
       data: {
@@ -14,7 +14,9 @@ export const createDentist = async (req: AuthRequest, res: Response) => {
         cro,
         specialties,
         phone,
-        email
+        email,
+        gender: gender || 'M',
+        avatarUrl
       }
     });
 
@@ -41,7 +43,8 @@ export const getDentists = async (req: AuthRequest, res: Response) => {
 
     const dentists = await prisma.dentist.findMany({
       where: whereClause,
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
+      take: 50
     });
 
     return res.json(dentists);
@@ -75,7 +78,7 @@ export const updateDentist = async (req: AuthRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params;
-    const { name, cro, specialties, phone, email } = req.body;
+    const { name, cro, specialties, phone, email, avatarUrl, gender } = req.body;
 
     const dentist = await prisma.dentist.findFirst({
       where: { id, tenantId }
@@ -87,7 +90,7 @@ export const updateDentist = async (req: AuthRequest, res: Response) => {
 
     const updatedDentist = await prisma.dentist.update({
       where: { id },
-      data: { name, cro, specialties, phone, email }
+      data: { name, cro, specialties, phone, email, avatarUrl, gender: gender || 'M' }
     });
 
     return res.json(updatedDentist);

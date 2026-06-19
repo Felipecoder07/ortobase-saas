@@ -1,11 +1,14 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/authMiddleware';
 import prisma from '../prisma';
+import { validateCPF } from '../utils/cpfValidator';
 
 export const createPatient = async (req: AuthRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
-    const { name, cpf, dateOfBirth, phone, email, address, clinicalNotes } = req.body;
+    const { name, cpf, dateOfBirth, phone, email, address, clinicalNotes, avatarUrl } = req.body;
+
+
 
     // Check unique CPF in tenant
     const existingPatient = await prisma.patient.findUnique({
@@ -25,7 +28,8 @@ export const createPatient = async (req: AuthRequest, res: Response) => {
         phone,
         email,
         address,
-        clinicalNotes
+        clinicalNotes,
+        avatarUrl
       }
     });
 
@@ -53,7 +57,8 @@ export const getPatients = async (req: AuthRequest, res: Response) => {
 
     const patients = await prisma.patient.findMany({
       where: whereClause,
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
+      take: 50
     });
 
     return res.json(patients);
@@ -96,7 +101,9 @@ export const updatePatient = async (req: AuthRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params;
-    const { name, phone, email, address, clinicalNotes } = req.body;
+    const { name, phone, email, address, clinicalNotes, cpf, avatarUrl } = req.body;
+
+
 
     const patient = await prisma.patient.findFirst({
       where: { id, tenantId }
@@ -108,7 +115,7 @@ export const updatePatient = async (req: AuthRequest, res: Response) => {
 
     const updatedPatient = await prisma.patient.update({
       where: { id },
-      data: { name, phone, email, address, clinicalNotes }
+      data: { name, phone, email, address, clinicalNotes, cpf, avatarUrl }
     });
 
     return res.json(updatedPatient);

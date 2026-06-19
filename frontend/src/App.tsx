@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import MobileSign from './pages/MobileSign';
 
 import DashboardLayout from './layouts/DashboardLayout';
 import Patients from './pages/Patients';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/mobile-sign" element={<MobileSign />} />
       <Route
         path="/dashboard"
         element={

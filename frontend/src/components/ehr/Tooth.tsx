@@ -1,30 +1,32 @@
 import React from 'react';
 
 export type FaceType = 'V' | 'L' | 'M' | 'D' | 'O' | 'ALL';
-export type ConditionType = 'HEALTHY' | 'CARIES' | 'RESTORED' | 'EXTRACTED' | 'CROWN' | 'IMPLANT';
+export type ConditionType = string;
 
 export interface ToothCondition {
   face: FaceType;
   condition: ConditionType;
 }
 
+export interface LegendItem {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface ToothProps {
   number: string;
   conditions: ToothCondition[];
   onFaceClick: (toothNumber: string, face: FaceType) => void;
+  legends: LegendItem[];
 }
 
-const Tooth: React.FC<ToothProps> = ({ number, conditions, onFaceClick }) => {
+const Tooth: React.FC<ToothProps> = ({ number, conditions, onFaceClick, legends }) => {
   const getFaceColor = (face: FaceType) => {
     const c = conditions.find(c => c.face === face || c.face === 'ALL');
     if (!c) return '#ffffff';
-    switch (c.condition) {
-      case 'CARIES': return '#ef4444'; // Red
-      case 'RESTORED': return '#3b82f6'; // Blue
-      case 'CROWN': return '#f59e0b'; // Yellow/Gold
-      case 'IMPLANT': return '#8b5cf6'; // Purple
-      default: return '#ffffff';
-    }
+    const legend = legends.find(l => l.id === c.condition);
+    return legend ? legend.color : '#94a3b8'; // Cinza se deletado
   };
 
   const isExtracted = conditions.some(c => c.condition === 'EXTRACTED' && c.face === 'ALL');
@@ -50,47 +52,76 @@ const Tooth: React.FC<ToothProps> = ({ number, conditions, onFaceClick }) => {
       <div 
         style={{ position: 'relative', width: '40px', height: '40px', cursor: 'pointer' }}
       >
-        <svg viewBox="0 0 100 100" width="100%" height="100%">
+        <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ filter: 'drop-shadow(0px 2px 3px rgba(0,0,0,0.1))' }}>
+          <defs>
+            <radialGradient id="centerGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0.1" />
+            </radialGradient>
+          </defs>
+          
           {/* Top Face */}
-          <polygon 
-            points="0,0 100,0 75,25 25,25" 
+          <path 
+            d="M 15 15 Q 50 0 85 15 L 70 30 Q 50 25 30 30 Z" 
             fill={getFaceColor(topFace)} 
-            stroke="#94a3b8" strokeWidth="2"
+            stroke="#94a3b8" strokeWidth="2" strokeLinejoin="round"
+            style={{ transition: 'all 0.2s', cursor: 'pointer' }}
+            onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+            onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}
             onClick={() => onFaceClick(number, topFace)}
           />
           {/* Right Face */}
-          <polygon 
-            points="100,0 100,100 75,75 75,25" 
+          <path 
+            d="M 85 15 Q 100 50 85 85 L 70 70 Q 75 50 70 30 Z" 
             fill={getFaceColor(rightFace)} 
-            stroke="#94a3b8" strokeWidth="2"
+            stroke="#94a3b8" strokeWidth="2" strokeLinejoin="round"
+            style={{ transition: 'all 0.2s', cursor: 'pointer' }}
+            onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+            onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}
             onClick={() => onFaceClick(number, rightFace)}
           />
           {/* Bottom Face */}
-          <polygon 
-            points="0,100 100,100 75,75 25,75" 
+          <path 
+            d="M 85 85 Q 50 100 15 85 L 30 70 Q 50 75 70 70 Z" 
             fill={getFaceColor(bottomFace)} 
-            stroke="#94a3b8" strokeWidth="2"
+            stroke="#94a3b8" strokeWidth="2" strokeLinejoin="round"
+            style={{ transition: 'all 0.2s', cursor: 'pointer' }}
+            onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+            onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}
             onClick={() => onFaceClick(number, bottomFace)}
           />
           {/* Left Face */}
-          <polygon 
-            points="0,0 0,100 25,75 25,25" 
+          <path 
+            d="M 15 85 Q 0 50 15 15 L 30 30 Q 25 50 30 70 Z" 
             fill={getFaceColor(leftFace)} 
-            stroke="#94a3b8" strokeWidth="2"
+            stroke="#94a3b8" strokeWidth="2" strokeLinejoin="round"
+            style={{ transition: 'all 0.2s', cursor: 'pointer' }}
+            onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+            onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}
             onClick={() => onFaceClick(number, leftFace)}
           />
           {/* Center Face (Oclusal) */}
-          <polygon 
-            points="25,25 75,25 75,75 25,75" 
+          <path 
+            d="M 30 30 Q 50 25 70 30 Q 75 50 70 70 Q 50 75 30 70 Q 25 50 30 30 Z" 
             fill={getFaceColor(centerFace)} 
-            stroke="#94a3b8" strokeWidth="2"
+            stroke="#94a3b8" strokeWidth="2" strokeLinejoin="round"
+            style={{ transition: 'all 0.2s', cursor: 'pointer' }}
+            onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+            onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}
             onClick={() => onFaceClick(number, centerFace)}
+          />
+
+          {/* Sombras internas para efeito 3D (overlay em todas as faces) */}
+          <path 
+            d="M 15 15 Q 50 0 85 15 Q 100 50 85 85 Q 50 100 15 85 Q 0 50 15 15 Z" 
+            fill="url(#centerGrad)" 
+            style={{ pointerEvents: 'none' }}
           />
           
           {isExtracted && (
-            <g onClick={() => onFaceClick(number, 'ALL')}>
-              <line x1="0" y1="0" x2="100" y2="100" stroke="#000000" strokeWidth="8" />
-              <line x1="100" y1="0" x2="0" y2="100" stroke="#000000" strokeWidth="8" />
+            <g onClick={() => onFaceClick(number, 'ALL')} style={{ cursor: 'pointer' }}>
+              <line x1="10" y1="10" x2="90" y2="90" stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
+              <line x1="90" y1="10" x2="10" y2="90" stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
             </g>
           )}
         </svg>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../../utils/api';
 import { Upload, Trash2, FileText, Image as ImageIcon, Download } from 'lucide-react';
 
 interface Attachment {
@@ -24,10 +24,7 @@ const AttachmentsTab: React.FC<AttachmentsTabProps> = ({ patientId, showToast })
 
   const fetchAttachments = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:3000/api/ehr/patients/${patientId}/attachments`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/ehr/patients/${patientId}/attachments`);
       setAttachments(res.data);
     } catch (err) {
       showToast('Erro ao carregar anexos.', 'error');
@@ -49,13 +46,7 @@ const AttachmentsTab: React.FC<AttachmentsTabProps> = ({ patientId, showToast })
 
       setUploading(true);
       try {
-        const token = localStorage.getItem('token');
-        await axios.post(`http://localhost:3000/api/ehr/patients/${patientId}/attachments`, formData, {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        await api.post(`/ehr/patients/${patientId}/attachments`, formData);
         showToast('Arquivo anexado com sucesso!', 'success');
         fetchAttachments();
       } catch (err) {
@@ -71,10 +62,7 @@ const AttachmentsTab: React.FC<AttachmentsTabProps> = ({ patientId, showToast })
     if (!confirm('Tem certeza que deseja remover este anexo?')) return;
     
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/api/ehr/attachments/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/ehr/attachments/${id}`);
       showToast('Anexo removido.', 'success');
       fetchAttachments();
     } catch (err) {
@@ -133,7 +121,7 @@ const AttachmentsTab: React.FC<AttachmentsTabProps> = ({ patientId, showToast })
               <div style={{ flexShrink: 0 }}>
                 {att.fileType.includes('image') ? (
                   <img 
-                    src={`http://localhost:3000${att.fileUrl}`} 
+                    src={`http://${window.location.hostname}:3000${att.fileUrl}`} 
                     alt={att.filename} 
                     style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
                   />
@@ -155,7 +143,7 @@ const AttachmentsTab: React.FC<AttachmentsTabProps> = ({ patientId, showToast })
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <a href={`http://localhost:3000${att.fileUrl}`} target="_blank" rel="noreferrer" title="Baixar" style={{ color: 'var(--primary)', cursor: 'pointer' }}>
+                <a href={`http://${window.location.hostname}:3000${att.fileUrl}`} target="_blank" rel="noreferrer" title="Baixar" style={{ color: 'var(--primary)', cursor: 'pointer' }}>
                   <Download size={18} />
                 </a>
                 <button onClick={() => handleDelete(att.id)} className="btn btn-ghost" style={{ padding: '4px', color: '#EF4444' }} title="Excluir">

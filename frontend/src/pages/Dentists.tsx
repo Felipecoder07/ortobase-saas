@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, X, Edit2, ChevronDown } from 'lucide-react';
-import axios from 'axios';
+import { Plus, Search, Trash2, X, Edit2, ChevronDown, User } from 'lucide-react';
+import api from '../utils/api';
+import { useToast } from '../contexts/ToastContext';
 import { maskPhone, maskName, maskCRO } from '../utils/masks';
 import { isValidCRO } from '../utils/validators';
 
@@ -10,6 +11,8 @@ interface Dentist {
   cro: string;
   specialties: string;
   phone: string;
+  gender?: string;
+  avatarUrl?: string;
 }
 
 const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
@@ -20,13 +23,13 @@ const Dentists: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [formData, setFormData] = useState({ name: '', cro_uf: 'SP', cro_number: '', specialties: '', phone: '' });
+  const { showToast } = useToast();
+  const [formData, setFormData] = useState({ name: '', cro_uf: 'SP', cro_number: '', specialties: '', phone: '', gender: 'M', avatarUrl: '' });
   const [showUfDropdown, setShowUfDropdown] = useState(false);
 
   const openNewModal = () => {
     setEditId(null);
-    setFormData({ name: '', cro_uf: 'SP', cro_number: '', specialties: '', phone: '' });
+    setFormData({ name: '', cro_uf: 'SP', cro_number: '', specialties: '', phone: '', gender: 'M', avatarUrl: '' });
     setShowModal(true);
   };
 
@@ -44,27 +47,42 @@ const Dentists: React.FC = () => {
       cro_uf: uf,
       cro_number: num,
       specialties: d.specialties || '', 
-      phone: d.phone 
+      phone: d.phone,
+      gender: d.gender || 'M',
+      avatarUrl: d.avatarUrl || ''
     });
     setShowModal(true);
   };
 
-  const showToast = (msg: string, type: 'success' | 'error') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
-
   const fetchDentists = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:3000/api/dentists?query=${search}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(`/dentists?query=${search}`);
       setDentists(res.data);
     } catch (err) { console.error(err); }
   };
 
   useEffect(() => { fetchDentists(); }, [search]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+    
+    try {
+      setLoading(true);
+      const res = await api.post('/upload', uploadData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setFormData(prev => ({ ...prev, avatarUrl: res.data.url }));
+      showToast('Foto carregada com sucesso!', 'success');
+    } catch (err) {
+      showToast('Erro ao fazer upload da foto.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     const croFinal = `CRO-${formData.cro_uf} ${formData.cro_number}`;
@@ -95,24 +113,21 @@ const Dentists: React.FC = () => {
         name: formData.name,
         cro: croFinal,
         specialties: formData.specialties,
-        phone: formData.phone
+        phone: formData.phone,
+        gender: formData.gender,
+        avatarUrl: formData.avatarUrl
       };
 
-      const token = localStorage.getItem('token');
       if (editId) {
-        await axios.put(`http://localhost:3000/api/dentists/${editId}`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.put(`/dentists/${editId}`, payload);
         showToast('Dentista atualizado com sucesso!', 'success');
       } else {
-        await axios.post('http://localhost:3000/api/dentists', payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.post('/dentists', payload);
         showToast('Dentista cadastrado com sucesso!', 'success');
       }
       setShowModal(false);
       setEditId(null);
-      setFormData({ name: '', cro_uf: 'SP', cro_number: '', specialties: '', phone: '' });
+      setFormData({ name: '', cro_uf: 'SP', cro_number: '', specialties: '', phone: '', gender: 'M', avatarUrl: '' });
       fetchDentists();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Erro ao salvar.', 'error');
@@ -124,10 +139,7 @@ const Dentists: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Deseja inativar este dentista?')) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/api/dentists/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/dentists/${id}`);
       showToast('Dentista inativado.', 'success');
       fetchDentists();
     } catch { showToast('Erro ao inativar.', 'error'); }
@@ -135,20 +147,6 @@ const Dentists: React.FC = () => {
 
   return (
     <div>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
-          background: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
-          border: `1px solid ${toast.type === 'success' ? '#BBF7D0' : '#FECACA'}`,
-          color: toast.type === 'success' ? '#15803D' : '#B91C1C',
-          padding: '12px 16px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 500,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        }}>
-          {toast.msg}
-        </div>
-      )}
-
       {/* Toolbar */}
       <div className="flex-between mb-4">
         <div className="search-wrapper" style={{ width: '320px' }}>
@@ -187,9 +185,13 @@ const Dentists: React.FC = () => {
                 <tr key={d.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div className="patient-avatar">
-                        {d.name.charAt(0).toUpperCase()}
-                      </div>
+                      {d.avatarUrl ? (
+                        <img src={`http://${window.location.hostname}:3000${d.avatarUrl}`} alt="Avatar" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div className="patient-avatar">
+                          {d.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <span style={{ fontWeight: 500 }}>{d.name}</span>
                     </div>
                   </td>
@@ -230,9 +232,39 @@ const Dentists: React.FC = () => {
               <button className="modal-close" onClick={() => setShowModal(false)}><X size={16} /></button>
             </div>
             <div className="modal-body">
+              <div className="form-group" style={{ alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer' }} className="avatar-upload-container">
+                  {formData.avatarUrl ? (
+                    <img src={`http://${window.location.hostname}:3000${formData.avatarUrl}`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', backgroundColor: 'var(--blue-bg)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 'bold' }}>
+                      {formData.name ? formData.name.charAt(0).toUpperCase() : <User size={32} color="var(--primary)" />}
+                    </div>
+                  )}
+                  <div className="avatar-upload-overlay" style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
+                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', 
+                    justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s', color: 'white'
+                  }}>
+                    <span style={{ fontSize: '12px', fontWeight: 500, textAlign: 'center' }}>Trocar<br/>Foto</span>
+                  </div>
+                  <input type="file" accept="image/*" onChange={handleFileUpload} disabled={loading} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+                </div>
+              </div>
               <div className="form-group">
                 <label className="form-label">Nome Completo *</label>
-                <input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: maskName(e.target.value) })} placeholder="Dr. João Silva" />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select 
+                    className="form-input" 
+                    style={{ flex: '0 0 100px' }} 
+                    value={formData.gender} 
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  >
+                    <option value="M">Dr.</option>
+                    <option value="F">Dra.</option>
+                  </select>
+                  <input type="text" className="form-input" style={{ flex: '1' }} value={formData.name} onChange={(e) => setFormData({ ...formData, name: maskName(e.target.value) })} placeholder="João Silva" />
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label">CRO *</label>

@@ -1,0 +1,39 @@
+# Implementação de Níveis de Acesso (RBAC)
+
+O usuário levantou um ponto crucial: separar as visões de Administrador (Dono), Dentista (Terceirizado) e Recepcionista.
+
+## ⚠️ User Review Required
+Abaixo está a Matriz de Permissões proposta. Precisamos que o dono da clínica (você) valide se essas regras estão corretas antes de programarmos os bloqueios no sistema.
+
+## Matriz de Permissões Proposta
+
+| Módulo/Tela | 👑 ADMIN (Dono) | 🦷 DENTISTA | 👩‍💻 RECEPÇÃO |
+|-------------|----------------|-------------|--------------|
+| **Agenda** | Vê tudo, edita tudo | Vê apenas sua agenda | Vê tudo, marca para todos |
+| **Pacientes (Dados Base)** | Cria, edita, deleta | Só visualiza | Cria, edita, deleta |
+| **Prontuário Clínico (EHR)** | Acesso total | Acesso total | Apenas visualiza o Orçamento |
+| **Dentistas (Equipe)** | Cadastra, demite | Não acessa | Visualiza a lista |
+| **Financeiro (Recebimentos)** | Acesso total | Não acessa | Pode receber PIX/Cartão |
+| **Dashboard (Faturamento Total)** | Acesso total | Não acessa | Não acessa |
+| **Procedimentos (Tabela de Preços)** | Edita preços | Não acessa | Só visualiza |
+
+## Open Questions
+1. O Dentista pode ver o que os **outros dentistas** estão fazendo na Agenda, ou ele deve enxergar exclusivamente o calendário dele?
+2. A Recepcionista deve ter permissão para dar "Desconto" na hora de cobrar o paciente, ou o preço tem que ser cravado?
+
+## Proposed Changes
+
+### Backend
+- Criação de um Middleware `roleMiddleware.ts`.
+- Bloqueio das rotas em `/routes/finance.ts` e `/routes/dentists.ts` para que apitem `403 Forbidden` se o token não for de ADMIN.
+- Modificação na rota `GET /appointments` para que, se o usuário for DENTISTA, a query no Prisma filtre automaticamente apenas os agendamentos dele: `where: { dentistId: req.user.id }`.
+
+### Frontend
+- Criação de um `useAuth()` Hook mais inteligente que armazena a `role` do usuário logado (`ADMIN`, `DENTIST`, `RECEPTIONIST`).
+- Proteção das páginas no `App.tsx`: redirecionar usuários sem permissão para uma página de "Acesso Negado" ou para a Agenda.
+- Ocultar os botões do Menu Lateral (Sidebar). O botão "Financeiro" e "Dashboard" simplesmente vão sumir da tela de quem for DENTISTA ou RECEPCIONISTA (ou a Recepção vai ver apenas uma versão capada do Financeiro).
+
+## Verification Plan
+1. Logar como Administrador e garantir que tudo continua funcionando normalmente.
+2. Entrar no banco, trocar o cargo do meu usuário para `DENTIST` e tentar acessar a rota `/finance`. O sistema deve exibir erro ou ocultar a tela.
+3. Testar a agenda logado como Dentista e garantir que só minhas consultas aparecem.

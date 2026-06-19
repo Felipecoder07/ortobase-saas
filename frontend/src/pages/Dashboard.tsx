@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, DollarSign, AlertCircle, UserX, RefreshCw, Clock } from 'lucide-react';
-import axios from 'axios';
+import api from '../utils/api';
 
 interface TodayAppointment {
   id: string;
@@ -34,7 +34,11 @@ const Dashboard: React.FC = () => {
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const today = new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const today = `${year}-${month}-${day}`;
   const todayFormatted = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   }).replace(/^\w/, (c) => c.toUpperCase());
@@ -42,14 +46,11 @@ const Dashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
       const [apptRes, allApptRes, reportsRes, defaultersRes] = await Promise.all([
-        axios.get(`http://localhost:3000/api/appointments?date=${today}`, { headers }),
-        axios.get(`http://localhost:3000/api/appointments`, { headers }),
-        axios.get('http://localhost:3000/api/finance/reports', { headers }),
-        axios.get('http://localhost:3000/api/finance/defaulters', { headers }),
+        api.get(`/appointments?date=${today}`),
+        api.get(`/appointments`),
+        api.get('/finance/reports'),
+        api.get('/finance/defaulters'),
       ]);
 
       setAppointments(apptRes.data);

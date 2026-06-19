@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Trash2, X, Edit2, User } from 'lucide-react';
-import axios from 'axios';
+import api from '../utils/api';
+import { useToast } from '../contexts/ToastContext';
 import { maskCPF, maskPhone, maskDate, maskName } from '../utils/masks';
 import { isValidCPF, isValidDate, isFutureDate } from '../utils/validators';
 
@@ -12,6 +13,7 @@ interface Patient {
   phone: string;
   dateOfBirth: string;
   clinicalNotes?: string;
+  avatarUrl?: string;
 }
 
 const Patients: React.FC = () => {
@@ -21,12 +23,12 @@ const Patients: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [formData, setFormData] = useState({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '' });
+  const { showToast } = useToast();
+  const [formData, setFormData] = useState({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '', avatarUrl: '' });
 
   const openNewModal = () => {
     setEditId(null);
-    setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '' });
+    setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '', avatarUrl: '' });
     setShowModal(true);
   };
 
@@ -37,27 +39,41 @@ const Patients: React.FC = () => {
       cpf: p.cpf, 
       dateOfBirth: p.dateOfBirth ? p.dateOfBirth.split('T')[0].split('-').reverse().join('/') : '', 
       phone: p.phone,
-      clinicalNotes: p.clinicalNotes || ''
+      clinicalNotes: p.clinicalNotes || '',
+      avatarUrl: p.avatarUrl || ''
     });
     setShowModal(true);
   };
 
-  const showToast = (msg: string, type: 'success' | 'error') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
-
   const fetchPatients = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:3000/api/patients?query=${search}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(`/patients?query=${search}`);
       setPatients(res.data);
     } catch (err) { console.error(err); }
   };
 
   useEffect(() => { fetchPatients(); }, [search]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+    
+    try {
+      setLoading(true);
+      const res = await api.post('/upload', uploadData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setFormData(prev => ({ ...prev, avatarUrl: res.data.url }));
+      showToast('Foto carregada com sucesso!', 'success');
+    } catch (err) {
+      showToast('Erro ao fazer upload da foto.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!formData.name || !formData.cpf || !formData.phone || !formData.dateOfBirth) {
@@ -70,10 +86,7 @@ const Patients: React.FC = () => {
       return;
     }
 
-    if (!isValidCPF(formData.cpf)) {
-      showToast('CPF inválido.', 'error');
-      return;
-    }
+
 
     if (formData.phone.length < 14) {
       showToast('Telefone inválido.', 'error');
@@ -92,24 +105,19 @@ const Patients: React.FC = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const [day, month, year] = formData.dateOfBirth.split('/');
       const payload = { ...formData, dateOfBirth: `${year}-${month}-${day}` };
 
       if (editId) {
-        await axios.put(`http://localhost:3000/api/patients/${editId}`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.put(`/patients/${editId}`, payload);
         showToast('Paciente atualizado com sucesso!', 'success');
       } else {
-        await axios.post('http://localhost:3000/api/patients', payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.post('/patients', payload);
         showToast('Paciente cadastrado com sucesso!', 'success');
       }
       setShowModal(false);
       setEditId(null);
-      setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '' });
+      setFormData({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '', avatarUrl: '' });
       fetchPatients();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Erro ao salvar.', 'error');
@@ -121,10 +129,7 @@ const Patients: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Deseja inativar este paciente?')) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/api/patients/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/patients/${id}`);
       showToast('Paciente inativado.', 'success');
       fetchPatients();
     } catch { showToast('Erro ao inativar.', 'error'); }
@@ -132,20 +137,6 @@ const Patients: React.FC = () => {
 
   return (
     <div>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
-          background: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
-          border: `1px solid ${toast.type === 'success' ? '#BBF7D0' : '#FECACA'}`,
-          color: toast.type === 'success' ? '#15803D' : '#B91C1C',
-          padding: '12px 16px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 500,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        }}>
-          {toast.msg}
-        </div>
-      )}
-
       {/* Toolbar */}
       <div className="flex-between mb-4">
         <div className="search-wrapper" style={{ width: '320px' }}>
@@ -183,9 +174,13 @@ const Patients: React.FC = () => {
                 <tr key={p.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div className="patient-avatar">
-                        {p.name.charAt(0).toUpperCase()}
-                      </div>
+                      {p.avatarUrl ? (
+                        <img src={`http://${window.location.hostname}:3000${p.avatarUrl}`} alt="Avatar" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div className="patient-avatar">
+                          {p.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <span style={{ fontWeight: 500 }}>{p.name}</span>
                     </div>
                   </td>
@@ -232,6 +227,25 @@ const Patients: React.FC = () => {
               <button className="modal-close" onClick={() => setShowModal(false)}><X size={16} /></button>
             </div>
             <div className="modal-body">
+              <div className="form-group" style={{ alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer' }} className="avatar-upload-container">
+                  {formData.avatarUrl ? (
+                    <img src={`http://${window.location.hostname}:3000${formData.avatarUrl}`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', backgroundColor: 'var(--blue-bg)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 'bold' }}>
+                      {formData.name ? formData.name.charAt(0).toUpperCase() : <User size={32} color="var(--primary)" />}
+                    </div>
+                  )}
+                  <div className="avatar-upload-overlay" style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
+                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', 
+                    justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s', color: 'white'
+                  }}>
+                    <span style={{ fontSize: '12px', fontWeight: 500, textAlign: 'center' }}>Trocar<br/>Foto</span>
+                  </div>
+                  <input type="file" accept="image/*" onChange={handleFileUpload} disabled={loading} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+                </div>
+              </div>
               <div className="form-group">
                 <label className="form-label">Nome Completo *</label>
                 <input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: maskName(e.target.value) })} placeholder="Ex: João da Silva" />

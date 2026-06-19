@@ -5,7 +5,8 @@ import {
   refundPayment,
   getDefaulters,
   sendReceipt,
-  getReports
+  getReports,
+  getDashboardMetrics
 } from '../controllers/financeController';
 import { authenticate } from '../middlewares/authMiddleware';
 
@@ -96,6 +97,20 @@ router.get('/defaulters', getDefaulters);
  *         description: Objeto com daily, monthly e yearly
  */
 router.get('/reports', getReports);
+
+/**
+ * @swagger
+ * /api/finance/dashboard-metrics:
+ *   get:
+ *     summary: "Obtém métricas de conversão e inadimplência"
+ *     tags: [Finance]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Objeto com appointmentsByStatus e financialMetrics
+ */
+router.get('/dashboard-metrics', getDashboardMetrics);
 
 /**
  * @swagger

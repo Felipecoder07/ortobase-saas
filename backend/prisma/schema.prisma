@@ -22,6 +22,7 @@ model Tenant {
   treatmentPlans TreatmentPlan[]
   toothConditions ToothCondition[]
   attachments PatientAttachment[]
+  odontogramLegends OdontogramLegend[]
 }
 
 model User {
@@ -49,6 +50,7 @@ model Patient {
   email         String?
   address       String?
   clinicalNotes String?
+  avatarUrl     String?
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -70,6 +72,8 @@ model Dentist {
   specialties String?
   phone       String
   email       String?
+  gender      String   @default("M") // M ou F
+  avatarUrl   String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -94,6 +98,7 @@ model Appointment {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   payment            Payment?
+  procedures         Procedure[]
 }
 
 model Payment {
@@ -124,6 +129,8 @@ model Anamnesis {
   chronicDiseases   String?
   previousSurgeries String?
   observations      String?
+  signatureUrl      String?
+  signedAt          DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -139,6 +146,7 @@ model Procedure {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   treatmentPlanItems TreatmentPlanItem[]
+  appointments      Appointment[]
 }
 
 model TreatmentPlan {
@@ -153,6 +161,8 @@ model TreatmentPlan {
   totalAmount Float    @default(0.0)
   discount    Float    @default(0.0)
   notes       String?
+  signatureUrl String?
+  signedAt    DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   items       TreatmentPlanItem[]
@@ -199,4 +209,15 @@ model PatientAttachment {
   uploadedBy  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model OdontogramLegend {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  color     String
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, name])
 }
