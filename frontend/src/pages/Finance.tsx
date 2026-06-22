@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, AlertCircle, UserX, MessageCircle, RefreshCw, X, Tag, Download } from 'lucide-react';
+import { DollarSign, AlertCircle, UserX, MessageCircle, RefreshCw, X, Tag, Download, Search, Check, ChevronDown } from 'lucide-react';
 import api from '../utils/api';
 import { useToast } from '../contexts/ToastContext';
 import { maskCurrency, parseCurrency } from '../utils/masks';
@@ -21,9 +21,127 @@ const STATUS_LABELS: Record<string, string> = {
   NO_SHOW: 'Faltou'
 };
 
+const MultiSearchableSelect = ({ options, values, onChange, placeholder }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const selectedOptions = options.filter((o: any) => values.includes(o.id));
+  const filteredOptions = options.filter((o: any) => o.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <div
+        className={`form-input ${isOpen ? 'active-select' : ''}`}
+        style={{
+          display: 'flex', flexWrap: 'wrap', gap: '6px', minHeight: '42px', alignItems: 'center', cursor: 'pointer',
+          borderColor: isOpen ? 'var(--primary)' : 'var(--border)',
+          boxShadow: isOpen ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none',
+          transition: 'all 0.2s ease',
+          background: 'var(--card-bg)',
+          padding: selectedOptions.length > 0 ? '4px 8px' : '0px 10px'
+        }}
+        onClick={() => setIsOpen(true)}
+      >
+        {selectedOptions.length === 0 && (
+          <span style={{ color: 'var(--text-muted)' }}>{placeholder}</span>
+        )}
+
+        {selectedOptions.map((opt: any) => (
+          <div key={opt.id} style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'var(--blue-bg)', color: 'var(--primary)',
+            padding: '4px 10px', borderRadius: '16px', fontSize: '13px', fontWeight: 500
+          }}>
+            {opt.name}
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(values.filter((v: string) => v !== opt.id));
+              }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '2px', borderRadius: '50%' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'inherit'; }}
+            >
+              <X size={12} />
+            </div>
+          </div>
+        ))}
+
+        <div style={{ flex: 1, minWidth: '30px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+          <ChevronDown size={16} style={{ color: isOpen ? 'var(--primary)' : 'var(--text-muted)', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }} onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }} />
+        </div>
+      </div>
+
+      {isOpen && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setIsOpen(false)} />
+          <div style={{
+            position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: '100%',
+            background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '8px',
+            zIndex: 1000, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'fadeIn 0.15s ease-out'
+          }}>
+            <div style={{ padding: '10px', borderBottom: '1px solid var(--border)', background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Search size={14} style={{ color: 'var(--text-muted)' }} />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Pesquisar..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  width: '100%', border: 'none', background: 'transparent', outline: 'none',
+                  fontSize: '13.5px', color: 'var(--text-primary)'
+                }}
+              />
+            </div>
+            <div style={{ maxHeight: '200px', overflowY: 'auto', padding: '4px' }}>
+              {filteredOptions.length === 0 ? (
+                <div style={{ padding: '12px', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                  Nenhum resultado encontrado
+                </div>
+              ) : (
+                filteredOptions.map((o: any) => {
+                  const isSelected = values.includes(o.id);
+                  return (
+                    <div
+                      key={o.id}
+                      style={{
+                        padding: '10px 12px', cursor: 'pointer', fontSize: '13.5px', borderRadius: '6px',
+                        background: isSelected ? 'var(--blue-bg)' : 'transparent',
+                        color: isSelected ? 'var(--primary)' : 'var(--text-primary)',
+                        fontWeight: isSelected ? 600 : 400,
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        marginBottom: '2px'
+                      }}
+                      onClick={() => {
+                        if (isSelected) {
+                          onChange(values.filter((v: string) => v !== o.id));
+                        } else {
+                          onChange([...values, o.id]);
+                        }
+                      }}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg)'; }}
+                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      {o.name}
+                      {isSelected && <Check size={14} />}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const Finance: React.FC = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [defaulters, setDefaulters] = useState<any[]>([]);
+  const [procedures, setProcedures] = useState<any[]>([]);
   const [reports, setReports] = useState({ daily: 0, monthly: 0, yearly: 0 });
   const [advancedMetrics, setAdvancedMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -38,22 +156,31 @@ const Finance: React.FC = () => {
   const [selectedAppt, setSelectedAppt] = useState<any>(null);
   const [refundAppt, setRefundAppt] = useState<any>(null);
   const [refundReason, setRefundReason] = useState('');
-  const [payForm, setPayForm] = useState<{method: string, amount: number | string, serviceType: string, installments: number}>({ method: 'PIX', amount: '', serviceType: '', installments: 1 });
+  const [payForm, setPayForm] = useState<{method: string, amount: number | string, serviceType: string, installments: number, hasDiscount: boolean, discountType: 'PERCENTAGE' | 'VALUE', discountInput: string, procedureIds: string[], basePrice: number}>({ method: 'PIX', amount: '', serviceType: '', installments: 1, hasDiscount: false, discountType: 'PERCENTAGE', discountInput: '', procedureIds: [], basePrice: 0 });
 
   const { showToast } = useToast();
 
   const fetchData = async () => {
     try {
-      const [apptRes, defRes, repRes, metricsRes] = await Promise.all([
+      const [apptRes, defRes, procRes] = await Promise.all([
         api.get('/appointments'),
         api.get(`/finance/defaulters?month=${reportMonth}`),
-        api.get(`/finance/reports?month=${reportMonth}`),
-        api.get(`/finance/dashboard-metrics?month=${reportMonth}`)
+        api.get('/procedures')
       ]);
       setAppointments(apptRes.data);
       setDefaulters(defRes.data);
-      setReports(repRes.data);
-      setAdvancedMetrics(metricsRes.data);
+      setProcedures(procRes.data);
+
+      try {
+        const [repRes, metricsRes] = await Promise.all([
+          api.get(`/finance/reports?month=${reportMonth}`),
+          api.get(`/finance/dashboard-metrics?month=${reportMonth}`)
+        ]);
+        setReports(repRes.data);
+        setAdvancedMetrics(metricsRes.data);
+      } catch (e) {
+        console.warn('Usuário não tem permissão para visualizar relatórios financeiros.');
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -69,15 +196,88 @@ const Finance: React.FC = () => {
     return map[method] || method;
   };
 
-  const pending = appointments.filter((a) => !a.payment && a.status !== 'CANCELED');
-  const paid = appointments.filter((a) => a.payment && a.payment.status === 'PAID');
+  const getPaidSoFar = (a: any) => {
+    if (!a.payments || !Array.isArray(a.payments)) return 0;
+    return a.payments.filter((p: any) => p.status === 'PAID').reduce((sum: number, p: any) => sum + p.amount, 0);
+  };
+
+  const isFullyPaid = (a: any) => {
+    return getPaidSoFar(a) >= (a.price || 0) && a.payments && a.payments.length > 0;
+  };
+
+  const pending = appointments.filter((a) => !isFullyPaid(a) && a.status !== 'CANCELED');
+  const paid = appointments.filter((a) => isFullyPaid(a));
+
+  const handleDiscountChange = (type: 'PERCENTAGE' | 'VALUE', inputValue: string, basePrice: number) => {
+    let newAmount = basePrice || 0;
+    let finalInput = inputValue;
+
+    if (inputValue) {
+      if (type === 'PERCENTAGE') {
+        const sanitizedInput = inputValue.replace(/\D/g, ''); // Permite apenas números (inteiros)
+        const pct = parseInt(sanitizedInput, 10);
+        if (!isNaN(pct)) {
+          if (pct > 100) { finalInput = '100'; }
+          else { finalInput = pct.toString(); }
+          
+          const finalPct = parseInt(finalInput, 10);
+          const discountAmt = newAmount * (finalPct / 100);
+          newAmount = newAmount - discountAmt;
+        } else {
+          finalInput = '';
+        }
+      } else {
+        const val = parseCurrency(inputValue);
+        if (val) {
+          if (val > newAmount) {
+            newAmount = 0;
+            finalInput = maskCurrency((basePrice * 100).toString());
+          } else {
+            newAmount = newAmount - val;
+          }
+        }
+      }
+    }
+    
+    if (newAmount < 0) newAmount = 0;
+
+    setPayForm(prev => ({ 
+      ...prev, 
+      discountType: type, 
+      discountInput: finalInput, 
+      amount: maskCurrency(newAmount.toFixed(2).replace('.', '')) 
+    }));
+  };
+
+  const handleProceduresChange = (newProcedureIds: string[]) => {
+    const selectedProcs = procedures.filter(p => newProcedureIds.includes(p.id));
+    const newBasePrice = selectedProcs.reduce((sum, p) => sum + (p.basePrice || 0), 0);
+    
+    const paidSoFar = getPaidSoFar(selectedAppt);
+    const newRemaining = newBasePrice - paidSoFar;
+    
+    setPayForm(prev => ({
+      ...prev,
+      procedureIds: newProcedureIds,
+      basePrice: newBasePrice,
+      amount: newRemaining > 0 ? maskCurrency(newRemaining.toFixed(2).replace('.', '')) : '',
+      hasDiscount: false,
+      discountInput: ''
+    }));
+  };
 
   const handlePay = async () => {
     const amount = parseCurrency(payForm.amount.toString());
     if (!amount || amount <= 0) {
-      showToast('O valor deve ser maior que zero.', 'error');
+      showToast('O valor a pagar deve ser maior que zero.', 'error');
       return;
     }
+    
+    if (payForm.basePrice <= 0) {
+      showToast('O valor total da consulta (baseado nos procedimentos) deve ser maior que zero.', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       await api.post('/finance', {
@@ -86,6 +286,8 @@ const Finance: React.FC = () => {
         amount: amount,
         serviceType: payForm.serviceType,
         installments: Number(payForm.installments),
+        procedureIds: payForm.procedureIds,
+        price: payForm.basePrice
       });
       showToast('Pagamento registrado!', 'success');
       setShowPayModal(false);
@@ -99,7 +301,7 @@ const Finance: React.FC = () => {
     if (!refundReason) { showToast('A justificativa é obrigatória.', 'error'); return; }
     setLoading(true);
     try {
-      await api.post(`/finance/${refundAppt.payment.id}/refund`, { refundReason });
+      await api.post(`/finance/${refundAppt.payments[0].id}/refund`, { refundReason });
       showToast('Estorno realizado!', 'success');
       setShowRefundModal(false);
       setRefundReason('');
@@ -118,11 +320,23 @@ const Finance: React.FC = () => {
 
   const openPayModal = (appt: any) => {
     setSelectedAppt(appt);
+    const paidSoFar = getPaidSoFar(appt);
+    
+    const apptProcedures = appt.procedures || [];
+    const procedureIds = apptProcedures.map((p: any) => p.id);
+    const initialBasePrice = appt.price || 0;
+    const remaining = initialBasePrice - paidSoFar;
+
     setPayForm({ 
       method: 'PIX', 
-      amount: appt.price ? maskCurrency(appt.price.toFixed(2).replace('.', '')) : '', 
+      amount: remaining > 0 ? maskCurrency(remaining.toFixed(2).replace('.', '')) : '', 
       serviceType: appt.serviceType || '', 
-      installments: 1 
+      installments: 1,
+      hasDiscount: false,
+      discountType: 'PERCENTAGE',
+      discountInput: '',
+      procedureIds,
+      basePrice: initialBasePrice
     });
     setShowPayModal(true);
   };
@@ -155,7 +369,7 @@ const Finance: React.FC = () => {
         a.serviceType,
         STATUS_LABELS[a.status] || a.status,
         a.price || 0,
-        a.payment ? 'Sim' : 'Não'
+        isFullyPaid(a) ? 'Sim' : 'Não'
       ]);
       
       const csvContent = [
@@ -245,7 +459,16 @@ const Finance: React.FC = () => {
                     <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.dentist?.name || '-'}</td>
                     <td>{p.serviceType}</td>
                     <td><StatusBadge status={p.status} /></td>
-                    <td>R$ {p.price?.toFixed(2) || '0,00'}</td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>R$ {p.price?.toFixed(2) || '0.00'}</span>
+                        {getPaidSoFar(p) > 0 && (
+                          <span style={{ fontSize: '11px', color: 'var(--green)', fontWeight: 500 }}>
+                            Já pago: R$ {getPaidSoFar(p).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td style={{ textAlign: 'right' }}>
                       <button className="btn btn-green btn-sm" onClick={() => openPayModal(p)}>
                         <DollarSign size={13} /> Receber
@@ -280,35 +503,25 @@ const Finance: React.FC = () => {
                     <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
                     <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.dentist?.name || '-'}</td>
                     <td>{p.serviceType}</td>
-                    <td><span className="badge badge-blue">{getMethodLabel(p.payment?.method)}</span></td>
+                    <td>
+                      <span className="badge badge-blue">
+                        {p.payments && p.payments.length === 1 
+                          ? getMethodLabel(p.payments[0].method) 
+                          : 'Múltiplos'}
+                      </span>
+                    </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontWeight: 600, color: 'var(--green)', fontSize: '14px' }}>
-                            R$ {p.payment?.amount?.toFixed(2)}
+                            R$ {getPaidSoFar(p).toFixed(2)}
                           </span>
-                          {p.payment?.discount > 0 && (
-                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textDecoration: 'line-through', fontWeight: 400 }}>
-                              R$ {p.price?.toFixed(2)}
-                            </span>
-                          )}
                         </div>
-                        {p.payment?.discount > 0 && (
-                          <div style={{ 
-                            fontSize: '11px', color: '#b45309', background: '#fef3c7', 
-                            padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', 
-                            alignItems: 'center', gap: '4px', width: 'fit-content', fontWeight: 600,
-                            border: '1px solid #fde68a'
-                          }}>
-                            <Tag size={10} strokeWidth={2.5} />
-                            Desconto de R$ {p.payment.discount.toFixed(2)}
-                          </div>
-                        )}
                       </div>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                        <button className="btn btn-outline btn-sm" onClick={() => handleSendReceipt(p.payment.id)}>
+                        <button className="btn btn-outline btn-sm" onClick={() => handleSendReceipt(p.payments[0].id)}>
                           <MessageCircle size={13} /> Comprovante
                         </button>
                         <button className="btn btn-outline-red btn-sm" onClick={() => openRefundModal(p)}>
@@ -492,18 +705,105 @@ const Finance: React.FC = () => {
               <button className="modal-close" onClick={() => setShowPayModal(false)}><X size={16} /></button>
             </div>
             <div className="modal-body">
-              <div className="info-box" style={{ marginBottom: '16px' }}>
-                <div style={{ fontWeight: 600 }}>Paciente: {selectedAppt.patient.name}</div>
+              <div className="info-box" style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontWeight: 600 }}>Paciente: {selectedAppt.patient.name}</div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    Valor Total da Consulta: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>R$ {payForm.basePrice.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
+              
               <div className="form-group">
-                <label className="form-label">Procedimento Realizado *</label>
+                <label className="form-label">Procedimentos Realizados</label>
+                <MultiSearchableSelect
+                  options={procedures}
+                  values={payForm.procedureIds}
+                  onChange={handleProceduresChange}
+                  placeholder="Selecione os procedimentos"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Descrição/Observação (Opcional)</label>
                 <input type="text" className="form-input" value={payForm.serviceType}
+                  placeholder="Ex: Restauração adicional, etc."
                   onChange={(e) => setPayForm({ ...payForm, serviceType: e.target.value })} />
               </div>
               <div className="form-group">
-                <label className="form-label">Valor (R$) *</label>
+                <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>Aplicar Desconto?</label>
+                <div style={{ display: 'flex', background: 'var(--bg)', padding: '4px', borderRadius: '8px', width: 'fit-content', border: '1px solid var(--border)' }}>
+                  <button 
+                    type="button"
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      background: payForm.hasDiscount ? 'var(--green)' : 'transparent',
+                      color: payForm.hasDiscount ? '#fff' : 'var(--text-secondary)',
+                      transition: 'all 0.2s'
+                    }}
+                    onClick={() => setPayForm({ ...payForm, hasDiscount: true })}
+                  >
+                    Sim
+                  </button>
+                  <button 
+                    type="button"
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      background: !payForm.hasDiscount ? 'var(--red)' : 'transparent',
+                      color: !payForm.hasDiscount ? '#fff' : 'var(--text-secondary)',
+                      transition: 'all 0.2s'
+                    }}
+                    onClick={() => {
+                      const remaining = Math.max(0, payForm.basePrice - getPaidSoFar(selectedAppt));
+                      setPayForm({ ...payForm, hasDiscount: false, discountInput: '', amount: remaining > 0 ? maskCurrency(remaining.toFixed(2).replace('.', '')) : '' });
+                    }}
+                  >
+                    Não
+                  </button>
+                </div>
+              </div>
+              
+              {payForm.hasDiscount && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Tipo de Desconto</label>
+                    <select className="form-select" value={payForm.discountType}
+                      onChange={(e) => handleDiscountChange(e.target.value as any, payForm.discountInput, payForm.basePrice)}>
+                      <option value="PERCENTAGE">Porcentagem (%)</option>
+                      <option value="VALUE">Valor (R$)</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Desconto</label>
+                    <input 
+                      type="text" 
+                      inputMode="numeric"
+                      className="form-input" 
+                      placeholder={payForm.discountType === 'PERCENTAGE' ? '0 a 100' : '0,00'} 
+                      value={payForm.discountInput}
+                      onChange={(e) => {
+                         let val = e.target.value;
+                         if (payForm.discountType === 'VALUE') val = maskCurrency(val);
+                         handleDiscountChange(payForm.discountType, val, payForm.basePrice);
+                      }} 
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="form-group">
+                <label className="form-label">Valor Final a Cobrar (R$) *</label>
                 <input type="text" inputMode="numeric" className="form-input" placeholder="0,00" value={payForm.amount}
-                  onChange={(e) => setPayForm({ ...payForm, amount: maskCurrency(e.target.value) })} />
+                  onChange={(e) => setPayForm({ ...payForm, amount: maskCurrency(e.target.value), discountInput: '' })} />
               </div>
               <div className="form-group">
                 <label className="form-label">Método de Pagamento *</label>
@@ -549,7 +849,7 @@ const Finance: React.FC = () => {
             <div className="modal-body">
               <div className="alert-box alert-red">
                 <strong>Atenção!</strong> Você está prestes a estornar o pagamento de{' '}
-                <strong>R$ {refundAppt.payment?.amount?.toFixed(2)}</strong> do paciente{' '}
+                <strong>R$ {refundAppt.payments && refundAppt.payments[0]?.amount?.toFixed(2)}</strong> do paciente{' '}
                 <strong>{refundAppt.patient.name}</strong>.
               </div>
               <div className="form-group">

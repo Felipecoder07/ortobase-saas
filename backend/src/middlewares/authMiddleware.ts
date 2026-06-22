@@ -6,6 +6,7 @@ export interface AuthRequest extends Request {
     id: string;
     tenantId: string;
     role: string;
+    email: string;
   };
 }
 
@@ -24,6 +25,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
       id: decoded.id,
       tenantId: decoded.tenantId,
       role: decoded.role,
+      email: decoded.email,
     };
     return next();
   } catch (err) {

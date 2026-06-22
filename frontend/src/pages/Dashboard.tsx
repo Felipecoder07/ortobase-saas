@@ -46,18 +46,28 @@ const Dashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [apptRes, allApptRes, reportsRes, defaultersRes] = await Promise.all([
+      const [apptRes, allApptRes, defaultersRes] = await Promise.all([
         api.get(`/appointments?date=${today}`),
         api.get(`/appointments`),
-        api.get('/finance/reports'),
         api.get('/finance/defaulters'),
       ]);
 
       setAppointments(apptRes.data);
-      setReports(reportsRes.data);
       setDefaulters(defaultersRes.data);
-      const pending = allApptRes.data.filter((a: any) => !a.payment && a.status !== 'CANCELED');
+      const isFullyPaid = (a: any) => {
+        if (!a.payments) return false;
+        const paidSoFar = a.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
+        return paidSoFar >= (a.price || 0) && a.payments.length > 0;
+      };
+      const pending = allApptRes.data.filter((a: any) => !isFullyPaid(a) && a.status !== 'CANCELED');
       setPendingCount(pending.length);
+
+      try {
+        const reportsRes = await api.get('/finance/reports');
+        setReports(reportsRes.data);
+      } catch (e) {
+        console.warn('Sem permissão para visualizar relatórios');
+      }
     } catch (err) {
       console.error(err);
     } finally {

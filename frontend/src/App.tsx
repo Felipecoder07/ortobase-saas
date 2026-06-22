@@ -17,9 +17,31 @@ const isAuthenticated = () => {
   return !!localStorage.getItem('token');
 };
 
+const getRole = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return '';
+  try {
+    const payloadBase64 = token.split('.')[1];
+    // JWT é codificado em Base64Url, precisamos normalizar para Base64 normal antes do atob
+    const normalizedBase64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+    const decodedPayload = JSON.parse(atob(normalizedBase64));
+    return decodedPayload.role || '';
+  } catch (e) {
+    return '';
+  }
+};
+
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+const RoleGuard = ({ children, allowedRoles }: { children: React.ReactElement, allowedRoles: string[] }) => {
+  const role = getRole();
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to="/dashboard/agenda" replace />;
   }
   return children;
 };
@@ -37,13 +59,13 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<RoleGuard allowedRoles={['ADMIN']}><Dashboard /></RoleGuard>} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="patients" element={<Patients />} />
         <Route path="patients/:id" element={<PatientProfile />} />
-        <Route path="dentists" element={<Dentists />} />
-        <Route path="finance" element={<Finance />} />
-        <Route path="procedures" element={<Procedures />} />
+        <Route path="dentists" element={<RoleGuard allowedRoles={['ADMIN', 'RECEPTIONIST']}><Dentists /></RoleGuard>} />
+        <Route path="finance" element={<RoleGuard allowedRoles={['ADMIN', 'RECEPTIONIST']}><Finance /></RoleGuard>} />
+        <Route path="procedures" element={<RoleGuard allowedRoles={['ADMIN', 'RECEPTIONIST']}><Procedures /></RoleGuard>} />
       </Route>
       {/* Rota padrão redireciona para o painel se logado, ou login se deslogado */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

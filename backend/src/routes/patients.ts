@@ -6,7 +6,7 @@ import {
   updatePatient,
   deletePatient
 } from '../controllers/patientController';
-import { authenticate } from '../middlewares/authMiddleware';
+import { authenticate, requireRole } from '../middlewares/authMiddleware';
 
 const router = Router();
 
@@ -54,7 +54,7 @@ router.use(authenticate);
  *       400:
  *         description: CPF já cadastrado na clínica
  */
-router.post('/', createPatient);
+router.post('/', requireRole(['ADMIN', 'RECEPTIONIST']), createPatient);
 
 /**
  * @swagger
@@ -135,7 +135,7 @@ router.get('/:id', getPatientById);
  *       404:
  *         description: Paciente não encontrado
  */
-router.put('/:id', updatePatient);
+router.put('/:id', requireRole(['ADMIN', 'RECEPTIONIST']), updatePatient);
 
 /**
  * @swagger
@@ -157,6 +157,6 @@ router.put('/:id', updatePatient);
  *       404:
  *         description: Paciente não encontrado
  */
-router.delete('/:id', deletePatient);
+router.delete('/:id', requireRole(['ADMIN']), deletePatient);
 
 export default router;

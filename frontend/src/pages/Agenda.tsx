@@ -31,21 +31,21 @@ const statusBadge = (status: string) => {
 };
 
 const formatTime = (iso: string) => {
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 };
 
 const SearchableSelect = ({ options, value, onChange, placeholder }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  
+
   const selectedOption = options.find((o: any) => o.id === value);
   const filteredOptions = options.filter((o: any) => o.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      <div 
+      <div
         className={`form-input ${isOpen ? 'active-select' : ''}`}
-        style={{ 
+        style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer',
           borderColor: isOpen ? 'var(--primary)' : 'var(--border)',
           boxShadow: isOpen ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none',
@@ -54,8 +54,8 @@ const SearchableSelect = ({ options, value, onChange, placeholder }: any) => {
         }}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span style={{ 
-          color: selectedOption ? 'var(--text-primary)' : 'var(--text-muted)', 
+        <span style={{
+          color: selectedOption ? 'var(--text-primary)' : 'var(--text-muted)',
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           fontWeight: selectedOption ? 500 : 400
         }}>
@@ -63,11 +63,11 @@ const SearchableSelect = ({ options, value, onChange, placeholder }: any) => {
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {selectedOption && (
-            <div 
+            <div
               onClick={(e) => { e.stopPropagation(); onChange(''); setSearch(''); }}
-              style={{ 
+              style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--text-muted)', padding: '2px', borderRadius: '50%' 
+                color: 'var(--text-muted)', padding: '2px', borderRadius: '50%'
               }}
               onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--red)'; e.currentTarget.style.background = 'var(--red-bg)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
@@ -78,7 +78,7 @@ const SearchableSelect = ({ options, value, onChange, placeholder }: any) => {
           <ChevronDown size={16} style={{ color: isOpen ? 'var(--primary)' : 'var(--text-muted)', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
         </div>
       </div>
-      
+
       {isOpen && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setIsOpen(false)} />
@@ -90,15 +90,15 @@ const SearchableSelect = ({ options, value, onChange, placeholder }: any) => {
           }}>
             <div style={{ padding: '10px', borderBottom: '1px solid var(--border)', background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Search size={14} style={{ color: 'var(--text-muted)' }} />
-              <input 
+              <input
                 autoFocus
-                type="text" 
-                placeholder="Pesquisar..." 
+                type="text"
+                placeholder="Pesquisar..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{ 
-                  width: '100%', border: 'none', background: 'transparent', outline: 'none', 
-                  fontSize: '13.5px', color: 'var(--text-primary)' 
+                style={{
+                  width: '100%', border: 'none', background: 'transparent', outline: 'none',
+                  fontSize: '13.5px', color: 'var(--text-primary)'
                 }}
               />
             </div>
@@ -109,9 +109,9 @@ const SearchableSelect = ({ options, value, onChange, placeholder }: any) => {
                 </div>
               ) : (
                 filteredOptions.map((o: any) => (
-                  <div 
+                  <div
                     key={o.id}
-                    style={{ 
+                    style={{
                       padding: '10px 12px', cursor: 'pointer', fontSize: '13.5px', borderRadius: '6px',
                       background: value === o.id ? 'var(--blue-bg)' : 'transparent',
                       color: value === o.id ? 'var(--primary)' : 'var(--text-primary)',
@@ -120,7 +120,7 @@ const SearchableSelect = ({ options, value, onChange, placeholder }: any) => {
                       marginBottom: '2px'
                     }}
                     onClick={() => { onChange(o.id); setIsOpen(false); setSearch(''); }}
-                    onMouseEnter={(e) => { if(value !== o.id) e.currentTarget.style.background = 'var(--bg)'; }}
+                    onMouseEnter={(e) => { if (value !== o.id) e.currentTarget.style.background = 'var(--bg)'; }}
                     onMouseLeave={(e) => { if (value !== o.id) e.currentTarget.style.background = 'transparent'; }}
                   >
                     {o.name}
@@ -139,15 +139,15 @@ const SearchableSelect = ({ options, value, onChange, placeholder }: any) => {
 const MultiSearchableSelect = ({ options, values, onChange, placeholder }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  
+
   const selectedOptions = options.filter((o: any) => values.includes(o.id));
   const filteredOptions = options.filter((o: any) => o.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      <div 
+      <div
         className={`form-input ${isOpen ? 'active-select' : ''}`}
-        style={{ 
+        style={{
           display: 'flex', flexWrap: 'wrap', gap: '6px', minHeight: '42px', alignItems: 'center', cursor: 'pointer',
           borderColor: isOpen ? 'var(--primary)' : 'var(--border)',
           boxShadow: isOpen ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none',
@@ -160,7 +160,7 @@ const MultiSearchableSelect = ({ options, values, onChange, placeholder }: any) 
         {selectedOptions.length === 0 && (
           <span style={{ color: 'var(--text-muted)' }}>{placeholder}</span>
         )}
-        
+
         {selectedOptions.map((opt: any) => (
           <div key={opt.id} style={{
             display: 'flex', alignItems: 'center', gap: '6px',
@@ -168,10 +168,10 @@ const MultiSearchableSelect = ({ options, values, onChange, placeholder }: any) 
             padding: '4px 10px', borderRadius: '16px', fontSize: '13px', fontWeight: 500
           }}>
             {opt.name}
-            <div 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                onChange(values.filter((v: string) => v !== opt.id)); 
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(values.filter((v: string) => v !== opt.id));
               }}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '2px', borderRadius: '50%' }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = '#fff'; }}
@@ -181,12 +181,12 @@ const MultiSearchableSelect = ({ options, values, onChange, placeholder }: any) 
             </div>
           </div>
         ))}
-        
+
         <div style={{ flex: 1, minWidth: '30px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-          <ChevronDown size={16} style={{ color: isOpen ? 'var(--primary)' : 'var(--text-muted)', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }} onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}/>
+          <ChevronDown size={16} style={{ color: isOpen ? 'var(--primary)' : 'var(--text-muted)', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }} onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }} />
         </div>
       </div>
-      
+
       {isOpen && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setIsOpen(false)} />
@@ -198,15 +198,15 @@ const MultiSearchableSelect = ({ options, values, onChange, placeholder }: any) 
           }}>
             <div style={{ padding: '10px', borderBottom: '1px solid var(--border)', background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Search size={14} style={{ color: 'var(--text-muted)' }} />
-              <input 
+              <input
                 autoFocus
-                type="text" 
-                placeholder="Pesquisar..." 
+                type="text"
+                placeholder="Pesquisar..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{ 
-                  width: '100%', border: 'none', background: 'transparent', outline: 'none', 
-                  fontSize: '13.5px', color: 'var(--text-primary)' 
+                style={{
+                  width: '100%', border: 'none', background: 'transparent', outline: 'none',
+                  fontSize: '13.5px', color: 'var(--text-primary)'
                 }}
               />
             </div>
@@ -219,9 +219,9 @@ const MultiSearchableSelect = ({ options, values, onChange, placeholder }: any) 
                 filteredOptions.map((o: any) => {
                   const isSelected = values.includes(o.id);
                   return (
-                    <div 
+                    <div
                       key={o.id}
-                      style={{ 
+                      style={{
                         padding: '10px 12px', cursor: 'pointer', fontSize: '13.5px', borderRadius: '6px',
                         background: isSelected ? 'var(--blue-bg)' : 'transparent',
                         color: isSelected ? 'var(--primary)' : 'var(--text-primary)',
@@ -229,15 +229,15 @@ const MultiSearchableSelect = ({ options, values, onChange, placeholder }: any) 
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         marginBottom: '2px'
                       }}
-                      onClick={() => { 
+                      onClick={() => {
                         if (isSelected) {
                           onChange(values.filter((v: string) => v !== o.id));
                         } else {
                           onChange([...values, o.id]);
                         }
                       }}
-                      onMouseEnter={(e) => { if(!isSelected) e.currentTarget.style.background = 'var(--bg)'; }}
-                      onMouseLeave={(e) => { if(!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg)'; }}
+                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                     >
                       {o.name}
                       {isSelected && <Check size={14} />}
@@ -259,7 +259,8 @@ const Agenda: React.FC = () => {
   const [patients, setPatients] = useState<any[]>([]);
   const [dentists, setDentists] = useState<any[]>([]);
   const [procedures, setProcedures] = useState<any[]>([]);
-  
+  const [selectedDentist, setSelectedDentist] = useState<string>('');
+
   // Daily view state
   const [currentDate, setCurrentDate] = useState(() => {
     const d = new Date();
@@ -282,11 +283,10 @@ const Agenda: React.FC = () => {
     let time = '';
     if (dateStr) {
       const d = new Date(dateStr);
+      // Pega data local para os inputs
+      date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       if (dateStr.includes('T')) {
-        date = d.toLocaleDateString('en-CA');
-        time = d.toTimeString().substring(0, 5);
-      } else {
-        date = dateStr;
+        time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
       }
     } else {
       date = currentDate;
@@ -298,8 +298,8 @@ const Agenda: React.FC = () => {
   const openEditModal = (appt: any) => {
     setEditId(appt.id);
     const d = new Date(appt.date);
-    const dateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-    const timeStr = `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
     setFormData({
       patientId: appt.patientId,
@@ -314,12 +314,25 @@ const Agenda: React.FC = () => {
     setShowModal(true);
   };
 
-  const fetchData = async (start?: string, end?: string) => {
+  const fetchData = async (startStr?: string, endStr?: string) => {
     try {
-      let url = `/appointments?date=${currentDate}`;
-      if (start && end) {
-        url = `/appointments?start=${start}&end=${end}`;
+      let url = '';
+      if (startStr && endStr) {
+
+
+        url = `/appointments?start=${startStr}&end=${endStr}`;
+      } else {
+        // Para visão diária, calcula o start e end em ISO strings para cobrir as 24h locais
+        const [year, month, day] = currentDate.split('-');
+        const startOfDay = new Date(Number(year), Number(month) - 1, Number(day), 0, 0, 0).toISOString();
+        const endOfDay = new Date(Number(year), Number(month) - 1, Number(day), 23, 59, 59).toISOString();
+        url = `/appointments?start=${startOfDay}&end=${endOfDay}`;
       }
+
+      if (selectedDentist) {
+        url += `&dentistId=${selectedDentist}`;
+      }
+
       const [apptRes, patRes, dentRes, procRes] = await Promise.all([
         api.get(url),
         api.get('/patients'),
@@ -333,11 +346,11 @@ const Agenda: React.FC = () => {
     } catch (err) { console.error(err); }
   };
 
-  useEffect(() => { 
+  useEffect(() => {
     if (viewMode === 'day') {
       fetchData();
     }
-  }, [currentDate, viewMode]);
+  }, [currentDate, viewMode, selectedDentist]);
 
   useEffect(() => {
     if (calendarRef.current && viewMode !== 'day') {
@@ -356,6 +369,13 @@ const Agenda: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (viewMode !== 'day' && calendarRef.current) {
+      const view = calendarRef.current.getApi().view;
+      fetchData(view.activeStart.toISOString(), view.activeEnd.toISOString());
+    }
+  }, [selectedDentist]);
+
   const handleSave = async () => {
     if (!formData.patientId || !formData.dentistId || !formData.date || !formData.time || !formData.durationInMinutes) {
       showToast('Preencha todos os campos obrigatórios.', 'error');
@@ -364,10 +384,15 @@ const Agenda: React.FC = () => {
 
     setLoading(true);
     try {
+      // Usando Date no timezone local
+      const [year, month, day] = formData.date.split('-');
+      const [hours, minutes] = formData.time.split(':');
+      const dateObj = new Date(Number(year), Number(month) - 1, Number(day), Number(hours), Number(minutes));
+
       const payload = {
         patientId: formData.patientId,
         dentistId: formData.dentistId,
-        date: `${formData.date}T${formData.time}:00.000Z`,
+        date: dateObj.toISOString(),
         durationInMinutes: Number(formData.durationInMinutes),
         serviceType: formData.serviceType,
         price: formData.price ? parseCurrency(formData.price) : 0,
@@ -383,7 +408,7 @@ const Agenda: React.FC = () => {
       }
       setShowModal(false);
       setEditId(null);
-      
+
       if (viewMode === 'day') {
         fetchData();
       } else if (calendarRef.current) {
@@ -401,7 +426,7 @@ const Agenda: React.FC = () => {
     try {
       await api.patch(`/appointments/${id}/status`, { status });
       showToast('Status atualizado!', 'success');
-      
+
       if (viewMode === 'day') {
         fetchData();
       } else if (calendarRef.current) {
@@ -414,8 +439,21 @@ const Agenda: React.FC = () => {
   const handleEventDrop = async (info: any) => {
     const { event, revert } = info;
     const originalAppt = event.extendedProps;
+
+    let newStart = new Date(event.start);
+    let minutes = newStart.getMinutes();
     
-    const novaDataIso = event.start.toISOString();
+    // Arredonda para o múltiplo de 5 mais próximo
+    const remainder = minutes % 5;
+    if (remainder !== 0) {
+      if (remainder >= 3) minutes += (5 - remainder);
+      else minutes -= remainder;
+      newStart.setMinutes(minutes);
+      newStart.setSeconds(0);
+      newStart.setMilliseconds(0);
+    }
+
+    const novaDataIso = newStart.toISOString();
 
     try {
       const payload = {
@@ -430,7 +468,7 @@ const Agenda: React.FC = () => {
 
       await api.put(`/appointments/${originalAppt.id}`, payload);
       showToast('Consulta reagendada com sucesso!', 'success');
-      
+
       // Recarregar eventos para a visão atual
       if (viewMode === 'day') {
         fetchData();
@@ -444,13 +482,56 @@ const Agenda: React.FC = () => {
     }
   };
 
+  const handleEventResize = async (info: any) => {
+    const { event, revert } = info;
+    const originalAppt = event.extendedProps;
+    
+    const start = new Date(event.start);
+    const end = new Date(event.end);
+    const durationInMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+
+    try {
+      const payload = {
+        patientId: originalAppt.patientId,
+        dentistId: originalAppt.dentistId,
+        date: start.toISOString(),
+        durationInMinutes: durationInMinutes,
+        serviceType: originalAppt.serviceType,
+        price: originalAppt.price,
+        procedureIds: originalAppt.procedures?.map((p: any) => p.id) || []
+      };
+
+      await api.put(`/appointments/${originalAppt.id}`, payload);
+      showToast('Duração da consulta atualizada!', 'success');
+
+      if (viewMode === 'day') {
+        fetchData();
+      } else if (calendarRef.current) {
+        const view = calendarRef.current.getApi().view;
+        fetchData(view.activeStart.toISOString(), view.activeEnd.toISOString());
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.error || 'Erro de conflito ao expandir o horário.', 'error');
+      revert();
+    }
+  };
+
   const handleEventClick = (info: any) => {
-    openEditModal(info.event.extendedProps);
+    // Corrige o bug de remarcar e clicar imediatamente: info.event.start é atualizado no drag
+    // mas o extendedProps guarda a info velha até a tela recarregar.
+    const apptData = { ...info.event.extendedProps };
+    if (info.event.start) {
+      apptData.date = info.event.start.toISOString();
+    }
+    openEditModal(apptData);
   };
 
   const handleDateClick = (info: any) => {
     if (info.view.type === 'dayGridMonth') {
-      setCurrentDate(info.dateStr);
+      // Ajusta a data clicada no calendário mensal para o timezone local
+      const d = new Date(info.dateStr);
+      const localDateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+      setCurrentDate(localDateStr);
       setViewMode('day');
     } else {
       openNewModal(info.dateStr);
@@ -460,7 +541,7 @@ const Agenda: React.FC = () => {
   const events = appointments.map((appt: any) => {
     const start = new Date(appt.date);
     const end = new Date(start.getTime() + appt.durationInMinutes * 60000);
-    
+
     const colorBaseMap: Record<string, string> = {
       SCHEDULED: 'blue',
       CONFIRMED: 'purple',
@@ -515,32 +596,46 @@ const Agenda: React.FC = () => {
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>Agenda e Consultas</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Gerencie o fluxo de atendimento da clínica</p>
         </div>
-        
+
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div style={{ display: 'flex', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '4px' }}>
-            <button 
-              className={`btn ${viewMode === 'day' ? 'btn-primary' : 'btn-ghost'}`} 
+            <button
+              className={`btn ${viewMode === 'day' ? 'btn-primary' : 'btn-ghost'}`}
               style={{ padding: '6px 16px', borderRadius: '6px', fontSize: '13px' }}
               onClick={() => setViewMode('day')}
             >
               Visão Diária
             </button>
-            <button 
-              className={`btn ${viewMode === 'week' ? 'btn-primary' : 'btn-ghost'}`} 
+            <button
+              className={`btn ${viewMode === 'week' ? 'btn-primary' : 'btn-ghost'}`}
               style={{ padding: '6px 16px', borderRadius: '6px', fontSize: '13px' }}
               onClick={() => setViewMode('week')}
             >
               Visão Semanal
             </button>
-            <button 
-              className={`btn ${viewMode === 'month' ? 'btn-primary' : 'btn-ghost'}`} 
+            <button
+              className={`btn ${viewMode === 'month' ? 'btn-primary' : 'btn-ghost'}`}
               style={{ padding: '6px 16px', borderRadius: '6px', fontSize: '13px' }}
               onClick={() => setViewMode('month')}
             >
               Visão Mensal
             </button>
           </div>
-          
+
+          <select
+            className="input"
+            style={{ width: '180px', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', background: 'var(--card-bg)', border: '1px solid var(--border)' }}
+            value={selectedDentist}
+            onChange={(e) => setSelectedDentist(e.target.value)}
+          >
+            <option value="">Todos os Dentistas</option>
+            {dentists.map((d: any) => (
+              <option key={d.id} value={d.id}>
+                {d.name.split(' ').slice(0, 2).join(' ')}
+              </option>
+            ))}
+          </select>
+
           <button className="btn btn-primary" onClick={() => openNewModal()}>
             <Plus size={15} />
             Nova Consulta
@@ -552,7 +647,7 @@ const Agenda: React.FC = () => {
         <div className="card" style={{ padding: '20px', minHeight: '600px' }}>
           <FullCalendar
             ref={calendarRef}
-            timeZone="UTC"
+            timeZone="local"
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView={viewMode === 'week' ? 'timeGridWeek' : 'dayGridMonth'}
             locale="pt-br"
@@ -568,42 +663,69 @@ const Agenda: React.FC = () => {
             editable={true}
             droppable={true}
             eventDrop={handleEventDrop}
+            eventResize={handleEventResize}
             dateClick={handleDateClick}
             eventClick={handleEventClick}
             datesSet={handleDatesSet}
+        slotDuration="00:30:00"
+            slotLabelInterval="01:00"
             slotMinTime="07:00:00"
-            slotMaxTime="22:00:00"
-            allDaySlot={false}
-            slotDuration="00:30:00"
+            slotMaxTime="20:00:00"
             snapDuration="00:05:00"
-            eventMinHeight={75}
+            allDaySlot={false}
+            slotLabelFormat={{ hour: 'numeric', minute: '2-digit', hour12: false }}
+            eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+            businessHours={[
+              { daysOfWeek: [1,2,3,4,5,6], startTime: '07:00', endTime: '12:00' },
+              { daysOfWeek: [1,2,3,4,5,6], startTime: '13:00', endTime: '20:00' }
+            ]}
+            dayHeaderContent={(arg) => {
+              const day = arg.date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+              const date = arg.date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+              const isToday = new Date().toDateString() === arg.date.toDateString();
+              return (
+                <div style={{ padding: '8px 0', display: 'flex', justifyContent: 'center' }}>
+                  <div style={{ 
+                    background: isToday ? 'var(--purple)' : 'transparent',
+                    color: isToday ? '#fff' : 'var(--text-primary)',
+                    padding: '4px 12px',
+                    borderRadius: '16px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    textTransform: 'capitalize'
+                  }}>
+                    {day}. {date}
+                  </div>
+                </div>
+              );
+            }}
+            slotEventOverlap={true}
             height="auto"
-            expandRows={true}
             nowIndicator={true}
             eventContent={(arg) => {
               const status = arg.event.extendedProps.status;
               let icon = null;
-              if (status === 'CONFIRMED') icon = <Check size={12} style={{ marginRight: 4 }}/>;
-              if (status === 'COMPLETED') icon = <CheckCircle2 size={12} style={{ marginRight: 4 }}/>;
-              if (status === 'CANCELED') icon = <X size={12} style={{ marginRight: 4 }}/>;
-              if (status === 'NO_SHOW') icon = <UserMinus size={12} style={{ marginRight: 4 }}/>;
+              if (status === 'CONFIRMED') icon = <Check size={12} style={{ marginRight: 4 }} />;
+              if (status === 'COMPLETED') icon = <CheckCircle2 size={12} style={{ marginRight: 4 }} />;
+              if (status === 'CANCELED') icon = <X size={12} style={{ marginRight: 4 }} />;
+              if (status === 'NO_SHOW') icon = <UserMinus size={12} style={{ marginRight: 4 }} />;
 
               // Visão Mensal tem um estilo mais compacto padrão do FullCalendar
               if (arg.view.type === 'dayGridMonth') {
                 return (
-                  <div 
+                  <div
                     title={`Paciente: ${arg.event.extendedProps.patient.name}\nServiço: ${arg.event.extendedProps.serviceType}\nDentista: ${arg.event.extendedProps.dentist.gender === 'F' ? 'Dra.' : 'Dr.'} ${arg.event.extendedProps.dentist.name}\nHorário: ${arg.timeText}`}
-                    style={{ 
-                    padding: '3px 6px', 
-                    fontSize: '11px', 
-                    overflow: 'hidden', 
-                    whiteSpace: 'nowrap', 
-                    textOverflow: 'ellipsis',
-                    color: `var(--${arg.event.extendedProps.baseColor})`,
-                    borderLeft: `3px solid var(--${arg.event.extendedProps.baseColor})`,
-                    borderRadius: '3px',
-                    width: '100%'
-                  }}>
+                    style={{
+                      padding: '3px 6px',
+                      fontSize: '11px',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      textOverflow: 'ellipsis',
+                      color: `var(--${arg.event.extendedProps.baseColor})`,
+                      borderLeft: `3px solid var(--${arg.event.extendedProps.baseColor})`,
+                      borderRadius: '3px',
+                      width: '100%'
+                    }}>
                     <span style={{ fontWeight: 700, marginRight: '4px' }}>{arg.timeText}</span>
                     <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{arg.event.title.split('-')[0]}</span>
                   </div>
@@ -613,62 +735,50 @@ const Agenda: React.FC = () => {
               if (arg.view.type === 'timeGridWeek' || arg.view.type === 'timeGridDay') {
                 const prefix = arg.event.extendedProps.dentist.gender === 'F' ? 'Dra.' : 'Dr.';
                 return (
-                  <div 
+                  <div
                     title={`Paciente: ${arg.event.extendedProps.patient.name}\nServiço: ${arg.event.extendedProps.serviceType}\nDentista: ${prefix} ${arg.event.extendedProps.dentist.name}\nHorário: ${arg.timeText}`}
-                    style={{ padding: '3px 5px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}
-                  >
-                    <div style={{ 
+                    style={{ 
+                      padding: '2px 6px', 
+                      width: '100%', 
+                      height: '100%', 
                       display: 'flex', 
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '10px', 
-                      fontWeight: 600, 
-                      color: `var(--${arg.event.extendedProps.baseColor})`,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.3px',
-                      flexShrink: 0,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden'
-                    }}>
-                      {icon}
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{arg.timeText}</span>
-                    </div>
-                    <div style={{ 
-                      fontWeight: 700, 
-                      fontSize: '12px', 
-                      marginTop: '2px', 
+                      alignItems: 'center', /* Centraliza o dot e o bloco de texto verticalmente */
+                      gap: '6px',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
                       color: 'var(--text-primary)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      lineHeight: 1.2
-                    }}>
-                      {arg.event.extendedProps.patient.name.split(' ').slice(0, 2).join(' ')}
-                    </div>
-                    <div style={{ 
-                      fontSize: '11px', 
-                      color: 'var(--text-secondary)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      marginTop: '1px'
-                    }}>
-                      {arg.event.extendedProps.serviceType}
-                    </div>
-                    <div style={{ 
-                      fontSize: '10px', 
-                      color: `var(--${arg.event.extendedProps.baseColor})`,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      marginTop: 'auto',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      fontWeight: 600
-                    }}>
-                      <User size={10} />
-                      {arg.event.extendedProps.dentist.gender === 'F' ? 'Dra.' : 'Dr.'} {arg.event.extendedProps.dentist.name.split(' ')[0]}
+                      boxShadow: 'var(--shadow-sm)',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {/* Dot Indicator */}
+                    <div style={{ flexShrink: 0, width: '6px', height: '6px', borderRadius: '50%', background: `var(--${arg.event.extendedProps.baseColor})` }} />
+
+                    {/* Text Column */}
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, justifyContent: 'center' }}>
+                      
+                      {/* Row 1: Patient and Time */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', lineHeight: 1.1 }}>
+                        <span style={{ fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {arg.event.extendedProps.patient.name.split(' ')[0]}
+                        </span>
+                        <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '4px' }}>
+                          {arg.timeText}
+                        </span>
+                      </div>
+
+                      {/* Row 2: Dentist (Always visible, clean text without icon) */}
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px', lineHeight: 1.1 }}>
+                        {prefix} {arg.event.extendedProps.dentist.name.split(' ').slice(0, 2).join(' ')}
+                      </span>
+
+                      {/* Row 3: Procedure (Visible only if duration >= 60) */}
+                      {arg.event.extendedProps.durationInMinutes >= 60 && (
+                        <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px', lineHeight: 1.1 }}>
+                          {arg.event.extendedProps.serviceType}
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
@@ -733,10 +843,10 @@ const Agenda: React.FC = () => {
                       {appt.status !== 'CANCELED' && appt.status !== 'COMPLETED' && appt.status !== 'NO_SHOW' && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <button
-                            style={{ 
+                            style={{
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              background: 'var(--blue-bg)', color: 'var(--primary)', 
-                              border: '1px solid var(--blue-border)', borderRadius: '6px', 
+                              background: 'var(--blue-bg)', color: 'var(--primary)',
+                              border: '1px solid var(--blue-border)', borderRadius: '6px',
                               padding: '6px', cursor: 'pointer', transition: 'all 0.2s'
                             }}
                             onClick={() => openEditModal(appt)}
@@ -811,20 +921,20 @@ const Agenda: React.FC = () => {
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Paciente *</label>
-                <SearchableSelect 
-                  options={patients} 
-                  value={formData.patientId} 
-                  onChange={(val: string) => setFormData({ ...formData, patientId: val })} 
-                  placeholder="Buscar paciente..." 
+                <SearchableSelect
+                  options={patients}
+                  value={formData.patientId}
+                  onChange={(val: string) => setFormData({ ...formData, patientId: val })}
+                  placeholder="Buscar paciente..."
                 />
               </div>
               <div className="form-group">
                 <label className="form-label">Dentista *</label>
-                <SearchableSelect 
-                  options={dentists} 
-                  value={formData.dentistId} 
-                  onChange={(val: string) => setFormData({ ...formData, dentistId: val })} 
-                  placeholder="Buscar dentista..." 
+                <SearchableSelect
+                  options={dentists}
+                  value={formData.dentistId}
+                  onChange={(val: string) => setFormData({ ...formData, dentistId: val })}
+                  placeholder="Buscar dentista..."
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -843,40 +953,50 @@ const Agenda: React.FC = () => {
               </div>
               <div className="form-group">
                 <label className="form-label">Procedimentos</label>
-                <MultiSearchableSelect 
-                  options={procedures} 
-                  values={formData.procedureIds} 
+                <MultiSearchableSelect
+                  options={procedures}
+                  values={formData.procedureIds}
                   onChange={(selectedIds: string[]) => {
                     const selectedProcs = procedures.filter(p => selectedIds.includes(p.id));
                     const totalBasePrice = selectedProcs.reduce((acc, p) => acc + p.basePrice, 0);
                     const procNames = selectedProcs.map(p => p.name).join(', ');
-                    
-                    setFormData({ 
-                      ...formData, 
-                      procedureIds: selectedIds, 
-                      serviceType: procNames, 
-                      price: maskCurrency(totalBasePrice.toFixed(2).replace('.', '')) 
+
+                    setFormData({
+                      ...formData,
+                      procedureIds: selectedIds,
+                      serviceType: procNames || formData.serviceType,
+                      price: maskCurrency(totalBasePrice.toFixed(2).replace('.', ''))
                     });
-                  }} 
-                  placeholder={formData.serviceType || "Adicionar procedimento..."} 
+                  }}
+                  placeholder="Vincular procedimentos..."
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Serviço / Motivo da Consulta</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={formData.serviceType}
+                  onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
+                  placeholder="Ex: Avaliação Inicial"
                 />
               </div>
               <div className="form-group">
                 <label className="form-label">Valor / Preço (R$)</label>
-                <input 
-                  type="text" 
-                  inputMode="numeric" 
-                  className="form-input" 
-                  placeholder="0,00" 
-                  value={formData.price} 
-                  onChange={(e) => setFormData({ ...formData, price: maskCurrency(e.target.value) })} 
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="form-input"
+                  placeholder="0,00"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: maskCurrency(e.target.value) })}
                 />
               </div>
               {editId && (
                 <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => updateStatus(editId, 'CONFIRMED')} style={{ color: 'var(--purple)', borderColor: 'var(--purple)' }}><Check size={14}/> Confirmar</button>
-                  <button className="btn btn-outline btn-sm" onClick={() => updateStatus(editId, 'COMPLETED')} style={{ color: 'var(--green)', borderColor: 'var(--green)' }}><CheckCircle2 size={14}/> Finalizar</button>
-                  <button className="btn btn-outline btn-sm" onClick={() => updateStatus(editId, 'CANCELED')} style={{ color: 'var(--red)', borderColor: 'var(--red)' }}><X size={14}/> Cancelar</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => updateStatus(editId, 'CONFIRMED')} style={{ color: 'var(--purple)', borderColor: 'var(--purple)' }}><Check size={14} /> Confirmar</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => updateStatus(editId, 'COMPLETED')} style={{ color: 'var(--green)', borderColor: 'var(--green)' }}><CheckCircle2 size={14} /> Finalizar</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => updateStatus(editId, 'CANCELED')} style={{ color: 'var(--red)', borderColor: 'var(--red)' }}><X size={14} /> Cancelar</button>
                 </div>
               )}
             </div>

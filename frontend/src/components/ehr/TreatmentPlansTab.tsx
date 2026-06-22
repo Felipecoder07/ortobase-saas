@@ -329,12 +329,12 @@ const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = ({ patientId, showTo
 
                 {/* Actions for Status changes */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-                  {!plan.signatureUrl && plan.status !== 'REJECTED' && plan.status !== 'COMPLETED' && (
+                  {!plan.signatureUrl && plan.status !== 'REJECTED' && plan.status !== 'COMPLETED' && canEdit && (
                     <button className="btn btn-outline" onClick={() => openSignatureModal(plan.id)} style={{ color: 'var(--text-secondary)' }}>
                       <FileSignature size={16} /> Coletar Assinatura
                     </button>
                   )}
-                  {plan.status === 'PENDING' && (
+                  {plan.status === 'PENDING' && canEdit && (
                     <>
                       <button className="btn btn-ghost" onClick={() => updateStatus(plan.id, 'REJECTED')} style={{ color: '#EF4444' }}>
                         <XCircle size={16} /> Rejeitar

@@ -91,7 +91,7 @@ export const login = async (req: Request, res: Response) => {
     });
 
     const token = jwt.sign(
-      { id: user.id, tenantId: user.tenantId, role: user.role },
+      { id: user.id, tenantId: user.tenantId, role: user.role, email: user.email },
       process.env.JWT_SECRET || 'secret',
       { expiresIn: '7d' } // 7 dias de sessão
     );

@@ -79,7 +79,7 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
         appointments: {
           include: {
             dentist: { select: { name: true } },
-            payment: true
+            payments: true
           },
           orderBy: { date: 'desc' }
         }

@@ -6,7 +6,7 @@ import {
   updateDentist,
   deleteDentist
 } from '../controllers/dentistController';
-import { authenticate } from '../middlewares/authMiddleware';
+import { authenticate, requireRole } from '../middlewares/authMiddleware';
 
 const router = Router();
 
@@ -46,7 +46,7 @@ router.use(authenticate);
  *       201:
  *         description: Dentista criado
  */
-router.post('/', createDentist);
+router.post('/', requireRole(['ADMIN']), createDentist);
 
 /**
  * @swagger
@@ -66,7 +66,7 @@ router.post('/', createDentist);
  *       200:
  *         description: Lista de dentistas
  */
-router.get('/', getDentists);
+router.get('/', requireRole(['ADMIN', 'RECEPTIONIST', 'DENTIST']), getDentists);
 
 /**
  * @swagger
@@ -88,7 +88,7 @@ router.get('/', getDentists);
  *       404:
  *         description: Dentista não encontrado
  */
-router.get('/:id', getDentistById);
+router.get('/:id', requireRole(['ADMIN', 'RECEPTIONIST']), getDentistById);
 
 /**
  * @swagger
@@ -127,7 +127,7 @@ router.get('/:id', getDentistById);
  *       404:
  *         description: Dentista não encontrado
  */
-router.put('/:id', updateDentist);
+router.put('/:id', requireRole(['ADMIN']), updateDentist);
 
 /**
  * @swagger
@@ -149,6 +149,6 @@ router.put('/:id', updateDentist);
  *       404:
  *         description: Dentista não encontrado
  */
-router.delete('/:id', deleteDentist);
+router.delete('/:id', requireRole(['ADMIN']), deleteDentist);
 
 export default router;

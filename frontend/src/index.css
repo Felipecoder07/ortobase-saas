@@ -68,8 +68,8 @@ body {
 
 /* ===== SIDEBAR ===== */
 .sidebar {
-  width: 192px;
-  min-width: 192px;
+  width: 52px;
+  min-width: 52px;
   background: var(--sidebar-bg);
   display: flex;
   flex-direction: column;
@@ -78,6 +78,36 @@ body {
   left: 0;
   top: 0;
   z-index: 100;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sidebar:hover {
+  width: 192px;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+}
+
+/* Ocultar os textos quando a sidebar estiver encolhida */
+.sidebar-logo-text,
+.sidebar-nav-label,
+.sidebar-nav-item span,
+.sidebar-dark-toggle span,
+.sidebar-logout span {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+/* Mostrar os textos ao passar o mouse */
+.sidebar:hover .sidebar-logo-text,
+.sidebar:hover .sidebar-nav-label,
+.sidebar:hover .sidebar-nav-item span,
+.sidebar:hover .sidebar-dark-toggle span,
+.sidebar:hover .sidebar-logout span {
+  opacity: 1;
+  transition-delay: 0.1s;
+  pointer-events: auto;
 }
 
 .sidebar-logo {
@@ -118,6 +148,7 @@ body {
   flex: 1;
   padding: 12px 8px;
   overflow-y: auto;
+  overflow-x: hidden; /* Remove o scroll horizontal quando encolhida */
 }
 
 .sidebar-nav-label {
@@ -236,11 +267,12 @@ body {
 
 /* ===== MAIN LAYOUT ===== */
 .main-wrapper {
-  margin-left: 192px;
+  margin-left: 52px;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .main-header {
@@ -1120,21 +1152,12 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 .fc-timegrid-event {
-  border-style: solid !important;
-  border-width: 1px !important;
-  border-left-width: 4px !important;
-  margin: 1px 4px 1px 4px !important; 
-  border-radius: 6px !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important;
-  transition: all 0.2s ease !important;
-  background-clip: padding-box;
-  overflow: hidden !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
-.fc-timegrid-event:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.08) !important;
-  z-index: 10 !important;
-  filter: brightness(0.97);
+.fc-timegrid-event-harness {
+  padding: 1px 4px;
 }
 .fc-daygrid-event {
   background: transparent !important;
@@ -1142,7 +1165,7 @@ body {
   margin: 1px 2px !important;
 }
 .fc-timegrid-slot {
-  height: 4em !important; /* Aumentado drasticamente para garantir leitura completa de todas as 3 linhas (horário, nome, proc) */
+  height: 2.4em !important; /* Altura um pouco mais compacta */
 }
 .fc-col-header-cell-cushion {
   color: var(--text-secondary);

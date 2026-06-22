@@ -87,6 +87,12 @@ const PatientProfile: React.FC = () => {
     }
   };
 
+  const isFullyPaid = (a: any) => {
+    if (!a.payments) return false;
+    const paidSoFar = a.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
+    return paidSoFar >= (a.price || 0) && a.payments.length > 0;
+  };
+
   if (loading) return <div className="empty-state">Carregando perfil...</div>;
   if (!patient) return <div className="empty-state">Paciente não encontrado.</div>;
 
@@ -126,30 +132,36 @@ const PatientProfile: React.FC = () => {
           >
             <FileText size={18} /> Resumo
           </button>
-          <button 
-            onClick={() => setActiveTab('anamnese')}
-            style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'anamnese' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'anamnese' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'anamnese' ? 'bold' : 'normal', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <Activity size={18} /> Anamnese
-          </button>
+          {localStorage.getItem('role') !== 'RECEPTIONIST' && (
+            <button 
+              onClick={() => setActiveTab('anamnese')}
+              style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'anamnese' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'anamnese' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'anamnese' ? 'bold' : 'normal', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Activity size={18} /> Anamnese
+            </button>
+          )}
           <button 
             onClick={() => setActiveTab('planos')}
             style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'planos' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'planos' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'planos' ? 'bold' : 'normal', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             <Activity size={18} /> Orçamentos e Planos
           </button>
-          <button 
-            onClick={() => setActiveTab('odontograma')}
-            style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'odontograma' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'odontograma' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'odontograma' ? 'bold' : 'normal', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <Activity size={18} /> Odontograma
-          </button>
-          <button 
-            onClick={() => setActiveTab('anexos')}
-            style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'anexos' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'anexos' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'anexos' ? 'bold' : 'normal', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <Activity size={18} /> Anexos
-          </button>
+          {localStorage.getItem('role') !== 'RECEPTIONIST' && (
+            <button 
+              onClick={() => setActiveTab('odontograma')}
+              style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'odontograma' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'odontograma' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'odontograma' ? 'bold' : 'normal', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Activity size={18} /> Odontograma
+            </button>
+          )}
+          {localStorage.getItem('role') !== 'RECEPTIONIST' && (
+            <button 
+              onClick={() => setActiveTab('anexos')}
+              style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'anexos' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'anexos' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'anexos' ? 'bold' : 'normal', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Activity size={18} /> Anexos
+            </button>
+          )}
         </div>
 
         {/* Tab Content */}
@@ -190,8 +202,8 @@ const PatientProfile: React.FC = () => {
                           <td>{appt.serviceType}</td>
                           <td>{statusBadge(appt.status)}</td>
                           <td>
-                            {appt.payment ? (
-                              <span style={{ color: '#10B981', fontWeight: 500, fontSize: '13px' }}>Pago</span>
+                            {isFullyPaid(appt) ? (
+                              <span className="badge badge-green">Pago</span>
                             ) : (
                               appt.status === 'COMPLETED' ? (
                                 <span style={{ color: '#F59E0B', fontWeight: 500, fontSize: '13px' }}>Pendente</span>

@@ -82,8 +82,19 @@ export const getTreatmentPlans = async (req: Request, res: Response) => {
 
     const { patientId } = req.params;
 
+    let whereClause: any = { patientId, tenantId };
+
+    if ((req.user as any)?.role === 'DENTIST') {
+      const authDentist = await prisma.dentist.findFirst({ where: { email: (req.user as any)?.email, tenantId } });
+      if (authDentist) {
+        whereClause.dentistId = authDentist.id;
+      } else {
+        return res.json([]);
+      }
+    }
+
     const plans = await prisma.treatmentPlan.findMany({
-      where: { patientId, tenantId },
+      where: whereClause,
       include: {
         dentist: { select: { id: true, name: true } },
         items: {

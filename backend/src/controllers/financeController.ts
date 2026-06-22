@@ -5,7 +5,7 @@ import prisma from '../prisma';
 export const createPayment = async (req: AuthRequest, res: Response) => {
   try {
     const { tenantId, role } = req.user!;
-    const { appointmentId, method, amount, serviceType, installments = 1 } = req.body;
+    const { appointmentId, method, amount, serviceType, installments = 1, procedureIds, price } = req.body;
 
     const appointment = await prisma.appointment.findFirst({
       where: { id: appointmentId, tenantId }
@@ -15,7 +15,26 @@ export const createPayment = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Consulta não encontrada' });
     }
 
-    const finalAmount = amount !== undefined ? Number(amount) : (appointment.price || 0);
+    const existingPayments = await prisma.payment.findMany({
+      where: { appointmentId, status: 'PAID' }
+    });
+    const totalPaidSoFar = existingPayments.reduce((sum, p) => sum + p.amount, 0);
+    const currentPrice = price !== undefined ? Number(price) : (appointment.price || 0);
+    const balanceRemaining = currentPrice - totalPaidSoFar;
+
+    if (currentPrice <= 0) {
+      return res.status(400).json({ error: 'Você precisa definir o valor (preço) da consulta na agenda antes de receber pagamentos.' });
+    }
+
+    if (balanceRemaining <= 0) {
+      return res.status(400).json({ error: 'Esta consulta já está totalmente paga.' });
+    }
+
+    const finalAmount = amount !== undefined ? Number(amount) : balanceRemaining;
+
+    if (finalAmount > balanceRemaining) {
+      return res.status(400).json({ error: `O valor (R$ ${finalAmount}) excede o saldo devedor (R$ ${balanceRemaining}).` });
+    }
 
     // Regra: Parcela mínima R$30 no cartão
     if (['CREDIT_CARD'].includes(method) && installments > 1) {
@@ -28,14 +47,19 @@ export const createPayment = async (req: AuthRequest, res: Response) => {
     }
 
     // Calcula o desconto se o valor pago for menor que o valor original da consulta
-    const originalPrice = appointment.price || 0;
-    const discount = originalPrice > finalAmount ? (originalPrice - finalAmount) : 0;
+    const discount = currentPrice > finalAmount ? (currentPrice - finalAmount) : 0;
 
-    // Atualiza a consulta apenas com o novo serviço (se houver), preservando o preço original
+    // Atualiza a consulta com os novos procedimentos, preço e serviço
     await prisma.appointment.update({
       where: { id: appointmentId },
       data: {
-        ...(serviceType !== undefined && { serviceType })
+        ...(serviceType !== undefined && { serviceType }),
+        ...(price !== undefined && { price: Number(price) }),
+        ...(procedureIds !== undefined && {
+          procedures: {
+            set: procedureIds.map((pid: string) => ({ id: pid }))
+          }
+        })
       }
     });
 
@@ -53,10 +77,6 @@ export const createPayment = async (req: AuthRequest, res: Response) => {
 
     return res.status(201).json(payment);
   } catch (error) {
-    // Unique constraint on appointmentId
-    if ((error as any).code === 'P2002') {
-       return res.status(400).json({ error: 'Esta consulta já possui um pagamento registrado.' });
-    }
     console.error(error);
     return res.status(500).json({ error: 'Erro interno no servidor' });
   }
@@ -135,8 +155,7 @@ export const getDefaulters = async (req: AuthRequest, res: Response) => {
     
     let whereClause: any = {
       tenantId,
-      status: 'COMPLETED',
-      payment: null
+      status: 'COMPLETED'
     };
 
     if (month) {
@@ -151,14 +170,21 @@ export const getDefaulters = async (req: AuthRequest, res: Response) => {
       };
     }
 
-    // Inadimplentes: Consultas com status COMPLETED que não têm pagamento associado
-    const defaulters = await prisma.appointment.findMany({
+    // Buscamos todas as consultas COMPLETED e seus pagamentos válidos
+    const allCompleted = await prisma.appointment.findMany({
       where: whereClause,
       include: {
         patient: { select: { name: true, phone: true } },
-        dentist: { select: { name: true } }
+        dentist: { select: { name: true } },
+        payments: { where: { status: 'PAID' } }
       },
       orderBy: { date: 'asc' }
+    });
+
+    // Filtramos no JS: Inadimplente = preço > 0 E valorPago < preço
+    const defaulters = allCompleted.filter(appt => {
+      const paidSoFar = appt.payments.reduce((sum, p) => sum + p.amount, 0);
+      return (appt.price || 0) > 0 && paidSoFar < (appt.price || 0);
     });
 
     return res.json(defaulters);
@@ -258,7 +284,7 @@ export const getDashboardMetrics = async (req: AuthRequest, res: Response) => {
 
     const appointments = await prisma.appointment.findMany({
       where: whereClause,
-      include: { payment: true }
+      include: { payments: true }
     });
 
     // 1. Appointments by Status
@@ -271,8 +297,11 @@ export const getDashboardMetrics = async (req: AuthRequest, res: Response) => {
 
     // 2. Financial Metrics (Inadimplência)
     const completedApps = appointments.filter(a => a.status === 'COMPLETED');
-    const paidCompleted = completedApps.filter(a => a.payment !== null).length;
-    const unpaidCompleted = completedApps.filter(a => a.payment === null).length;
+    const paidCompleted = completedApps.filter(a => {
+      const paidSoFar = a.payments.reduce((sum, p) => sum + p.amount, 0);
+      return paidSoFar >= (a.price || 0) && a.payments.length > 0;
+    }).length;
+    const unpaidCompleted = completedApps.length - paidCompleted;
 
     const financialMetrics = {
       defaultRate: completedApps.length > 0 ? (unpaidCompleted / completedApps.length) * 100 : 0,

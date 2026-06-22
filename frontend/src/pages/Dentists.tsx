@@ -159,10 +159,12 @@ const Dentists: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="btn btn-primary" onClick={openNewModal}>
-          <Plus size={15} />
-          Novo Dentista
-        </button>
+        {localStorage.getItem('role') === 'ADMIN' && (
+          <button className="btn btn-primary" onClick={openNewModal}>
+            <Plus size={15} />
+            Novo Dentista
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -200,20 +202,24 @@ const Dentists: React.FC = () => {
                   <td>{d.phone}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="actions-group">
-                      <button
-                        className="action-btn green"
-                        onClick={() => openEditModal(d)}
-                        title="Editar dentista"
-                      >
-                        <Edit2 size={15} />
-                      </button>
-                      <button
-                        className="action-btn red"
-                        onClick={() => handleDelete(d.id)}
-                        title="Inativar dentista"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {localStorage.getItem('role') === 'ADMIN' && (
+                        <>
+                          <button
+                            className="action-btn green"
+                            onClick={() => openEditModal(d)}
+                            title="Editar dentista"
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
+                            className="action-btn red"
+                            onClick={() => handleDelete(d.id)}
+                            title="Inativar dentista"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

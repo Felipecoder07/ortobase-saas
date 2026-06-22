@@ -11,13 +11,13 @@ import {
   ClipboardList
 } from 'lucide-react';
 
-const navItems = [
-  { name: 'Visão Geral', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Agenda', path: '/dashboard/agenda', icon: Calendar },
-  { name: 'Pacientes', path: '/dashboard/patients', icon: Users },
-  { name: 'Dentistas', path: '/dashboard/dentists', icon: Stethoscope },
-  { name: 'Procedimentos', path: '/dashboard/procedures', icon: ClipboardList },
-  { name: 'Financeiro', path: '/dashboard/finance', icon: DollarSign },
+const allNavItems = [
+  { name: 'Visão Geral', path: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN'] },
+  { name: 'Agenda', path: '/dashboard/agenda', icon: Calendar, roles: ['ADMIN', 'DENTIST', 'RECEPTIONIST'] },
+  { name: 'Pacientes', path: '/dashboard/patients', icon: Users, roles: ['ADMIN', 'DENTIST', 'RECEPTIONIST'] },
+  { name: 'Dentistas', path: '/dashboard/dentists', icon: Stethoscope, roles: ['ADMIN', 'RECEPTIONIST'] },
+  { name: 'Procedimentos', path: '/dashboard/procedures', icon: ClipboardList, roles: ['ADMIN', 'RECEPTIONIST'] },
+  { name: 'Financeiro', path: '/dashboard/finance', icon: DollarSign, roles: ['ADMIN', 'RECEPTIONIST'] },
 ];
 
 const pageTitles: Record<string, string> = {
@@ -64,7 +64,7 @@ const DashboardLayout: React.FC = () => {
 
         <nav className="sidebar-nav">
           <div className="sidebar-nav-label">Menu Principal</div>
-          {navItems.map((item) => {
+          {allNavItems.filter(item => item.roles.includes(localStorage.getItem('role') || '')).map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
@@ -74,7 +74,7 @@ const DashboardLayout: React.FC = () => {
                 onClick={() => navigate(item.path)}
               >
                 <Icon className="sidebar-nav-icon" size={16} />
-                {item.name}
+                <span>{item.name}</span>
               </button>
             );
           })}
@@ -83,11 +83,11 @@ const DashboardLayout: React.FC = () => {
         <div className="sidebar-footer">
           <button className="sidebar-dark-toggle">
             <Moon size={15} style={{ opacity: 0.7 }} />
-            Modo Escuro
+            <span>Modo Escuro</span>
           </button>
           <button className="sidebar-logout" onClick={handleLogout}>
             <LogOut size={15} />
-            Sair do Sistema
+            <span>Sair do Sistema</span>
           </button>
         </div>
       </aside>

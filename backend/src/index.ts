@@ -49,6 +49,6 @@ app.use('/api/upload', uploadRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+app.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`Servidor rodando na porta ${PORT} no IP local (0.0.0.0)`);
 });

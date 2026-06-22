@@ -81,9 +81,11 @@ const Procedures: React.FC = () => {
           <h1 className="page-title">Catálogo de Procedimentos</h1>
           <p className="page-subtitle">Gerencie os procedimentos disponíveis para orçamentos</p>
         </div>
-        <button className="btn btn-primary" onClick={() => openModal()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Plus size={16} /> Novo Procedimento
-        </button>
+        {localStorage.getItem('role') === 'ADMIN' && (
+          <button className="btn btn-primary" onClick={() => openModal()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Plus size={16} /> Novo Procedimento
+          </button>
+        )}
       </div>
 
       <div className="card">
@@ -109,12 +111,16 @@ const Procedures: React.FC = () => {
                   <td>R$ {proc.basePrice.toFixed(2)}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button className="btn btn-ghost" onClick={() => openModal(proc)} style={{ padding: '6px' }}>
-                        <Edit2 size={16} color="var(--text-secondary)" />
-                      </button>
-                      <button className="btn btn-ghost" onClick={() => handleDelete(proc.id)} style={{ padding: '6px' }}>
-                        <Trash2 size={16} color="#ef4444" />
-                      </button>
+                      {localStorage.getItem('role') === 'ADMIN' && (
+                        <>
+                          <button className="btn btn-ghost" onClick={() => openModal(proc)} style={{ padding: '6px' }}>
+                            <Edit2 size={16} color="var(--text-secondary)" />
+                          </button>
+                          <button className="btn btn-ghost" onClick={() => handleDelete(proc.id)} style={{ padding: '6px' }}>
+                            <Trash2 size={16} color="#ef4444" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

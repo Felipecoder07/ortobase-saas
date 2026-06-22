@@ -11,10 +11,8 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
     const appointmentEnd = new Date(appointmentDate.getTime() + durationInMinutes * 60000);
 
     // Validação de Conflito de Horário para o mesmo dentista
-    const startOfDay = new Date(appointmentDate);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const endOfDay = new Date(appointmentDate);
-    endOfDay.setUTCHours(23, 59, 59, 999);
+    const startOfDay = new Date(appointmentDate.getTime() - 24 * 60 * 60 * 1000);
+    const endOfDay = new Date(appointmentDate.getTime() + 24 * 60 * 60 * 1000);
 
     // Validação de Conflito de Horário para o paciente
     const patientConflictingAppointments = await prisma.appointment.findMany({
@@ -55,7 +53,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
     });
 
     const hasConflict = conflictingAppointments.some(conflicting => {
-      const BUFFER = 10 * 60000; // 10 minutos em milissegundos
+      const BUFFER = 5 * 60000; // 5 minutos em milissegundos
       const confStart = conflicting.date.getTime();
       const confEnd = confStart + conflicting.durationInMinutes * 60000;
       
@@ -69,7 +67,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
     });
 
     if (hasConflict) {
-      throw new AppError('Conflito! É necessário um intervalo mínimo de 10 minutos entre as consultas.', 400);
+      throw new AppError('Conflito! É necessário um intervalo mínimo de 5 minutos entre as consultas.', 400);
     }
 
     const appointment = await prisma.appointment.create({
@@ -99,9 +97,13 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
 
 export const getAppointments = async (req: AuthRequest, res: Response) => {
     const { tenantId } = req.user!;
-    const { date, start, end } = req.query;
+    const { date, start, end, dentistId } = req.query;
 
     let whereClause: any = { tenantId };
+
+    if (dentistId) {
+      whereClause.dentistId = String(dentistId);
+    }
 
     if (start && end) {
       whereClause.date = {
@@ -122,7 +124,7 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
       include: {
         patient: { select: { name: true, cpf: true, phone: true } },
         dentist: { select: { name: true, cro: true, gender: true } },
-        payment: true,
+        payments: true,
         procedures: { select: { id: true, name: true, basePrice: true } }
       },
       orderBy: { date: 'asc' }
@@ -144,6 +146,16 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
       throw new AppError('Consulta não encontrada', 404);
     }
 
+    // Temporariamente removendo a restrição para Dentista mexer na agenda de todos
+    /*
+    if (req.user!.role === 'DENTIST') {
+      const dentist = await prisma.dentist.findFirst({ where: { email: req.user!.email, tenantId } });
+      if (!dentist || appointment.dentistId !== dentist.id) {
+        throw new AppError('Acesso negado: Você só pode modificar suas próprias consultas.', 403);
+      }
+    }
+    */
+
     const updated = await prisma.appointment.update({
       where: { id: id as string },
       data: { status, cancellationReason }
@@ -163,6 +175,16 @@ export const deleteAppointment = async (req: AuthRequest, res: Response) => {
     if (!appointment) {
       throw new AppError('Consulta não encontrada', 404);
     }
+
+    // Temporariamente removendo a restrição para Dentista mexer na agenda de todos
+    /*
+    if (req.user!.role === 'DENTIST') {
+      const dentist = await prisma.dentist.findFirst({ where: { email: req.user!.email, tenantId } });
+      if (!dentist || appointment.dentistId !== dentist.id) {
+        throw new AppError('Acesso negado: Você só pode excluir suas próprias consultas.', 403);
+      }
+    }
+    */
 
     await prisma.appointment.delete({
       where: { id: id as string }
@@ -184,13 +206,21 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
       throw new AppError('Consulta não encontrada', 404);
     }
 
+    // Temporariamente removendo a restrição para Dentista mexer na agenda de todos
+    /*
+    if (req.user!.role === 'DENTIST') {
+      const authDentist = await prisma.dentist.findFirst({ where: { email: req.user!.email, tenantId } });
+      if (!authDentist || appointment.dentistId !== authDentist.id || dentistId !== authDentist.id) {
+        throw new AppError('Acesso negado: Você só pode modificar suas próprias consultas.', 403);
+      }
+    }
+    */
+
     const appointmentDate = new Date(date);
     const appointmentEnd = new Date(appointmentDate.getTime() + durationInMinutes * 60000);
 
-    const startOfDay = new Date(appointmentDate);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const endOfDay = new Date(appointmentDate);
-    endOfDay.setUTCHours(23, 59, 59, 999);
+    const startOfDay = new Date(appointmentDate.getTime() - 24 * 60 * 60 * 1000);
+    const endOfDay = new Date(appointmentDate.getTime() + 24 * 60 * 60 * 1000);
 
     // Validação de Conflito de Horário para o paciente
     const patientConflictingAppointments = await prisma.appointment.findMany({
@@ -233,7 +263,7 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
     });
 
     const hasConflict = conflictingAppointments.some(conflicting => {
-      const BUFFER = 10 * 60000; // 10 minutos em milissegundos
+      const BUFFER = 5 * 60000; // 5 minutos em milissegundos
       const confStart = conflicting.date.getTime();
       const confEnd = confStart + conflicting.durationInMinutes * 60000;
       
@@ -247,7 +277,7 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
     });
 
     if (hasConflict) {
-      throw new AppError('Conflito! É necessário um intervalo mínimo de 10 minutos entre as consultas.', 400);
+      throw new AppError('Conflito! É necessário um intervalo mínimo de 5 minutos entre as consultas.', 400);
     }
 
     const updated = await prisma.appointment.update({

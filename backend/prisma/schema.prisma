@@ -97,7 +97,7 @@ model Appointment {
   cancellationReason String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-  payment            Payment?
+  payments           Payment[]
   procedures         Procedure[]
 }
 
@@ -105,7 +105,7 @@ model Payment {
   id             String      @id @default(uuid())
   tenantId       String
   tenant         Tenant      @relation(fields: [tenantId], references: [id])
-  appointmentId  String      @unique
+  appointmentId  String
   appointment    Appointment @relation(fields: [appointmentId], references: [id])
   amount         Float
   method         String      // PIX, CREDIT_CARD, DEBIT_CARD, CASH

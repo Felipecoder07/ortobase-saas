@@ -149,10 +149,12 @@ const Patients: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="btn btn-primary" onClick={openNewModal}>
-          <Plus size={15} />
-          Novo Paciente
-        </button>
+        {localStorage.getItem('role') !== 'DENTIST' && (
+          <button className="btn btn-primary" onClick={openNewModal}>
+            <Plus size={15} />
+            Novo Paciente
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -195,20 +197,24 @@ const Patients: React.FC = () => {
                       >
                         <User size={15} />
                       </button>
-                      <button
-                        className="action-btn green"
-                        onClick={() => openEditModal(p)}
-                        title="Editar paciente"
-                      >
-                        <Edit2 size={15} />
-                      </button>
-                      <button
-                        className="action-btn red"
-                        onClick={() => handleDelete(p.id)}
-                        title="Inativar paciente"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {localStorage.getItem('role') !== 'DENTIST' && (
+                        <button
+                          className="action-btn green"
+                          onClick={() => openEditModal(p)}
+                          title="Editar paciente"
+                        >
+                          <Edit2 size={15} />
+                        </button>
+                      )}
+                      {localStorage.getItem('role') === 'ADMIN' && (
+                        <button
+                          className="action-btn red"
+                          onClick={() => handleDelete(p.id)}
+                          title="Inativar paciente"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

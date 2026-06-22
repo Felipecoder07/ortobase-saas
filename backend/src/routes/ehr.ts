@@ -43,6 +43,8 @@ import {
 
 const router = Router();
 
+import { authenticate, requireRole } from '../middlewares/authMiddleware';
+
 // Rotas públicas para assinatura no celular
 router.post('/mobile-sign', receiveMobileSignature);
 router.get('/mobile-sign/:token', pollMobileSignature);
@@ -50,28 +52,28 @@ router.get('/mobile-sign/:token', pollMobileSignature);
 router.use(authenticate);
 
 // Anamnese
-router.get('/patients/:patientId/anamnesis', getAnamnesis);
-router.post('/patients/:patientId/anamnesis', upsertAnamnesis); // Usado para criar ou atualizar
-router.post('/patients/:patientId/anamnesis/sign', signAnamnesis);
-router.post('/patients/:patientId/anamnesis/unlock', unlockAnamnesis);
+router.get('/patients/:patientId/anamnesis', requireRole(['ADMIN', 'DENTIST']), getAnamnesis);
+router.post('/patients/:patientId/anamnesis', requireRole(['ADMIN', 'DENTIST']), upsertAnamnesis); // Usado para criar ou atualizar
+router.post('/patients/:patientId/anamnesis/sign', requireRole(['ADMIN', 'DENTIST']), signAnamnesis);
+router.post('/patients/:patientId/anamnesis/unlock', requireRole(['ADMIN', 'DENTIST']), unlockAnamnesis);
 
 // Planos de Tratamento (Orçamentos)
 router.get('/patients/:patientId/treatment-plans', getTreatmentPlans);
-router.post('/patients/:patientId/treatment-plans', createTreatmentPlan);
+router.post('/patients/:patientId/treatment-plans', requireRole(['ADMIN', 'DENTIST']), createTreatmentPlan);
 router.put('/treatment-plans/:planId/status', updateTreatmentPlanStatus);
-router.delete('/treatment-plans/:planId', deleteTreatmentPlan);
+router.delete('/treatment-plans/:planId', requireRole(['ADMIN', 'DENTIST']), deleteTreatmentPlan);
 router.post('/treatment-plans/:planId/sign', signTreatmentPlan);
 
 // Odontograma
 router.get('/odontogram-legends', getOdontogramLegends);
-router.post('/odontogram-legends', addOdontogramLegend);
-router.delete('/odontogram-legends/:name', deleteOdontogramLegend);
-router.get('/patients/:patientId/odontogram', getToothConditions);
-router.post('/patients/:patientId/odontogram', updateToothCondition);
+router.post('/odontogram-legends', requireRole(['ADMIN']), addOdontogramLegend);
+router.delete('/odontogram-legends/:name', requireRole(['ADMIN']), deleteOdontogramLegend);
+router.get('/patients/:patientId/odontogram', requireRole(['ADMIN', 'DENTIST']), getToothConditions);
+router.post('/patients/:patientId/odontogram', requireRole(['ADMIN', 'DENTIST']), updateToothCondition);
 
 // Anexos (Arquivos)
-router.get('/patients/:patientId/attachments', getAttachments);
-router.post('/patients/:patientId/attachments', upload.single('file'), uploadAttachment);
-router.delete('/attachments/:attachmentId', deleteAttachment);
+router.get('/patients/:patientId/attachments', requireRole(['ADMIN', 'DENTIST']), getAttachments);
+router.post('/patients/:patientId/attachments', requireRole(['ADMIN', 'DENTIST']), upload.single('file'), uploadAttachment);
+router.delete('/attachments/:attachmentId', requireRole(['ADMIN', 'DENTIST']), deleteAttachment);
 
 export default router;

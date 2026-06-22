@@ -230,6 +230,37 @@ const Login: React.FC = () => {
             >
               {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
             </button>
+
+            {/* Quick Login Buttons for Testing */}
+            <div style={{ marginTop: '16px', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+              <p style={{ fontSize: '12px', color: '#64748B', marginBottom: '12px', textAlign: 'center' }}>Acesso Rápido (Apenas Testes):</p>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ fontSize: '11px', padding: '6px 10px', flex: 1 }}
+                  onClick={() => { setEmail('adm'); setPassword('adm'); }}
+                >
+                  Admin
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ fontSize: '11px', padding: '6px 10px', flex: 1 }}
+                  onClick={() => { setEmail('recepcao@teste.com'); setPassword('123456'); }}
+                >
+                  Recepcionista
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ fontSize: '11px', padding: '6px 10px', flex: 1 }}
+                  onClick={() => { setEmail('dentista@teste.com'); setPassword('123456'); }}
+                >
+                  Dentista
+                </button>
+              </div>
+            </div>
           </form>
 
           <p style={{ textAlign: 'center', fontSize: '12px', color: '#94A3B8', marginTop: '20px' }}>

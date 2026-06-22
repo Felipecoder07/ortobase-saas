@@ -8,11 +8,12 @@ import {
   getReports,
   getDashboardMetrics
 } from '../controllers/financeController';
-import { authenticate } from '../middlewares/authMiddleware';
+import { authenticate, requireRole } from '../middlewares/authMiddleware';
 
 const router = Router();
 
 router.use(authenticate);
+router.use(requireRole(['ADMIN', 'RECEPTIONIST']));
 
 /**
  * @swagger
@@ -46,8 +47,6 @@ router.use(authenticate);
  *         description: Pagamento registrado
  *       400:
  *         description: Erro nas regras de parcelamento
- *       403:
- *         description: Recepcionista tentou aplicar desconto > 20%
  */
 router.post('/', createPayment);
 
@@ -96,7 +95,7 @@ router.get('/defaulters', getDefaulters);
  *       200:
  *         description: Objeto com daily, monthly e yearly
  */
-router.get('/reports', getReports);
+router.get('/reports', requireRole(['ADMIN']), getReports);
 
 /**
  * @swagger
@@ -110,7 +109,7 @@ router.get('/reports', getReports);
  *       200:
  *         description: Objeto com appointmentsByStatus e financialMetrics
  */
-router.get('/dashboard-metrics', getDashboardMetrics);
+router.get('/dashboard-metrics', requireRole(['ADMIN']), getDashboardMetrics);
 
 /**
  * @swagger

@@ -26,3 +26,6 @@ prisma/generated/
 # OS
 .DS_Store
 Thumbs.db
+
+# Uploads
+backend/uploads/
