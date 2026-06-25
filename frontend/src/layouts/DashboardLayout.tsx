@@ -7,9 +7,11 @@ import {
   Stethoscope,
   DollarSign,
   Moon,
+  Sun,
   LogOut,
   ClipboardList
 } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const allNavItems = [
   { name: 'Visão Geral', path: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN'] },
@@ -32,6 +34,7 @@ const pageTitles: Record<string, string> = {
 const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -81,9 +84,13 @@ const DashboardLayout: React.FC = () => {
         </nav>
 
         <div className="sidebar-footer">
-          <button className="sidebar-dark-toggle">
-            <Moon size={15} style={{ opacity: 0.7 }} />
-            <span>Modo Escuro</span>
+          <button className="sidebar-dark-toggle" onClick={toggleTheme}>
+            {theme === 'dark' ? (
+              <Sun size={15} style={{ opacity: 0.7 }} />
+            ) : (
+              <Moon size={15} style={{ opacity: 0.7 }} />
+            )}
+            <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
           </button>
           <button className="sidebar-logout" onClick={handleLogout}>
             <LogOut size={15} />

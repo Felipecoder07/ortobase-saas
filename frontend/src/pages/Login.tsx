@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +11,16 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    // Força tema claro apenas na tela de login
+    document.documentElement.setAttribute('data-theme', 'light');
+    return () => {
+      // Restaura o tema do usuário ao sair da tela de login
+      document.documentElement.setAttribute('data-theme', theme);
+    };
+  }, [theme]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +159,7 @@ const Login: React.FC = () => {
         padding: '40px',
       }}>
         <div style={{
-          background: 'white',
+          background: 'var(--card-bg)',
           borderRadius: '16px',
           padding: '36px',
           width: '100%',

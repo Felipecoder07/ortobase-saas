@@ -14,6 +14,7 @@ interface Appointment {
   durationInMinutes: number;
   serviceType: string;
   status: string;
+  cancellationReason?: string;
   patient: { name: string; phone: string };
   dentist: { name: string };
 }
@@ -269,6 +270,9 @@ const Agenda: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelApptId, setCancelApptId] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const { showToast } = useToast();
   const calendarRef = useRef<any>(null);
@@ -434,6 +438,32 @@ const Agenda: React.FC = () => {
         fetchData(view.activeStart.toISOString(), view.activeEnd.toISOString());
       }
     } catch { showToast('Erro ao atualizar.', 'error'); }
+  };
+
+  const handleCancelClick = (id: string) => {
+    setCancelApptId(id);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelReason) {
+      showToast('Por favor, informe o motivo do cancelamento.', 'error');
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.patch(`/appointments/${cancelApptId}/status`, { status: 'CANCELED', cancellationReason: cancelReason });
+      showToast('Consulta cancelada com sucesso!', 'success');
+      setShowCancelModal(false);
+      if (viewMode === 'day') {
+        fetchData();
+      } else if (calendarRef.current) {
+        const view = calendarRef.current.getApi().view;
+        fetchData(view.activeStart.toISOString(), view.activeEnd.toISOString());
+      }
+    } catch { showToast('Erro ao cancelar.', 'error'); }
+    finally { setLoading(false); }
   };
 
   const handleEventDrop = async (info: any) => {
@@ -675,10 +705,6 @@ const Agenda: React.FC = () => {
             allDaySlot={false}
             slotLabelFormat={{ hour: 'numeric', minute: '2-digit', hour12: false }}
             eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
-            businessHours={[
-              { daysOfWeek: [1,2,3,4,5,6], startTime: '07:00', endTime: '12:00' },
-              { daysOfWeek: [1,2,3,4,5,6], startTime: '13:00', endTime: '20:00' }
-            ]}
             dayHeaderContent={(arg) => {
               const day = arg.date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
               const date = arg.date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
@@ -835,6 +861,11 @@ const Agenda: React.FC = () => {
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                         Dr(a). {appt.dentist.name}
                       </div>
+                      {appt.status === 'CANCELED' && appt.cancellationReason && (
+                        <div style={{ fontSize: '12px', color: 'var(--red)', marginTop: '4px', fontStyle: 'italic' }}>
+                          Motivo: {appt.cancellationReason}
+                        </div>
+                      )}
                     </div>
 
                     {/* Status + actions */}
@@ -893,7 +924,7 @@ const Agenda: React.FC = () => {
                               style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--red)', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                               onMouseOver={(e) => e.currentTarget.style.background = 'var(--red-bg)'}
                               onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                              onClick={() => updateStatus(appt.id, 'CANCELED')}
+                              onClick={() => handleCancelClick(appt.id)}
                               title="Cancelar Consulta"
                             >
                               <X size={16} />
@@ -996,7 +1027,7 @@ const Agenda: React.FC = () => {
                 <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                   <button className="btn btn-outline btn-sm" onClick={() => updateStatus(editId, 'CONFIRMED')} style={{ color: 'var(--purple)', borderColor: 'var(--purple)' }}><Check size={14} /> Confirmar</button>
                   <button className="btn btn-outline btn-sm" onClick={() => updateStatus(editId, 'COMPLETED')} style={{ color: 'var(--green)', borderColor: 'var(--green)' }}><CheckCircle2 size={14} /> Finalizar</button>
-                  <button className="btn btn-outline btn-sm" onClick={() => updateStatus(editId, 'CANCELED')} style={{ color: 'var(--red)', borderColor: 'var(--red)' }}><X size={14} /> Cancelar</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => handleCancelClick(editId)} style={{ color: 'var(--red)', borderColor: 'var(--red)' }}><X size={14} /> Cancelar</button>
                 </div>
               )}
             </div>
@@ -1005,6 +1036,34 @@ const Agenda: React.FC = () => {
               <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
                 {loading ? 'Salvando...' : 'Salvar Consulta'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cancelamento */}
+      {showCancelModal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowCancelModal(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <span className="modal-title">Cancelar Consulta</span>
+              <button className="modal-close" onClick={() => setShowCancelModal(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Motivo do Cancelamento *</label>
+                <textarea
+                  className="form-textarea"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Ex: Paciente desmarcou por motivo de viagem..."
+                  rows={3}
+                />
+              </div>
+              <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button className="btn btn-secondary" onClick={() => setShowCancelModal(false)} disabled={loading}>Voltar</button>
+                <button className="btn btn-danger" onClick={confirmCancel} disabled={loading}>{loading ? 'Cancelando...' : 'Confirmar Cancelamento'}</button>
+              </div>
             </div>
           </div>
         </div>

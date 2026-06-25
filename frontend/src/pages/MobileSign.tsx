@@ -56,12 +56,12 @@ const MobileSign: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f8fafc' }}>
-      <div style={{ padding: '16px', backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
+      <div style={{ padding: '16px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--border)', textAlign: 'center' }}>
         <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Assinatura Digital</h3>
         <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>Assine no quadro abaixo usando o dedo</p>
       </div>
       
-      <div style={{ flex: 1, position: 'relative', margin: '16px', backgroundColor: '#ffffff', border: '2px dashed #cbd5e1', borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ flex: 1, position: 'relative', margin: '16px', backgroundColor: 'var(--card-bg)', border: '2px dashed var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
         <SignatureCanvas 
           ref={sigCanvas}
           penColor="black"
@@ -71,7 +71,7 @@ const MobileSign: React.FC = () => {
 
       {error && <p style={{ color: '#ef4444', textAlign: 'center', padding: '0 16px' }}>{error}</p>}
 
-      <div style={{ padding: '16px', display: 'flex', gap: '12px', backgroundColor: '#ffffff', borderTop: '1px solid #e2e8f0' }}>
+      <div style={{ padding: '16px', display: 'flex', gap: '12px', backgroundColor: 'var(--card-bg)', borderTop: '1px solid var(--border)' }}>
         <button 
           onClick={handleClear}
           style={{ flex: 1, padding: '16px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '16px', fontWeight: 'bold' }}>

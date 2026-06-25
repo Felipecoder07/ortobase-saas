@@ -251,6 +251,16 @@ const Patients: React.FC = () => {
                   </div>
                   <input type="file" accept="image/*" onChange={handleFileUpload} disabled={loading} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
                 </div>
+                {formData.avatarUrl && (
+                  <button 
+                    type="button" 
+                    className="btn btn-ghost btn-sm" 
+                    style={{ marginTop: '8px', color: 'var(--red)' }}
+                    onClick={() => setFormData({ ...formData, avatarUrl: '' })}
+                  >
+                    <Trash2 size={14} /> Remover Foto
+                  </button>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label">Nome Completo *</label>

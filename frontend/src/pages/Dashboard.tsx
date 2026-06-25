@@ -46,20 +46,27 @@ const Dashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const startOfMonth = `${year}-${month}-01`;
+      const endOfMonth = `${year}-${month}-${new Date(year, d.getMonth() + 1, 0).getDate()}`;
+      
       const [apptRes, allApptRes, defaultersRes] = await Promise.all([
         api.get(`/appointments?date=${today}`),
-        api.get(`/appointments`),
-        api.get('/finance/defaulters'),
+        api.get(`/appointments?start=${startOfMonth}T00:00:00.000Z&end=${endOfMonth}T23:59:59.999Z`),
+        api.get(`/finance/defaulters?month=${year}-${month}`),
       ]);
 
       setAppointments(apptRes.data);
       setDefaulters(defaultersRes.data);
       const isFullyPaid = (a: any) => {
         if (!a.payments) return false;
-        const paidSoFar = a.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
-        return paidSoFar >= (a.price || 0) && a.payments.length > 0;
+        const paidPayments = a.payments.filter((p: any) => p.status === 'PAID');
+        if (paidPayments.length === 0) return false;
+        const price = a.price || 0;
+        if (price === 0 && a.payments.reduce((sum: number, p: any) => sum + p.amount, 0) === 0) return false;
+        const paidSoFar = paidPayments.reduce((sum: number, p: any) => sum + p.amount, 0);
+        return paidSoFar >= price;
       };
-      const pending = allApptRes.data.filter((a: any) => !isFullyPaid(a) && a.status !== 'CANCELED');
+      const pending = allApptRes.data.filter((a: any) => !isFullyPaid(a) && a.status === 'COMPLETED');
       setPendingCount(pending.length);
 
       try {

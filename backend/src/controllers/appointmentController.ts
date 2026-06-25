@@ -8,6 +8,10 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
     const { patientId, dentistId, date, durationInMinutes, serviceType, price, procedureIds } = req.body;
 
     const appointmentDate = new Date(date);
+    const now = new Date();
+    if (appointmentDate.getTime() < now.getTime()) {
+      throw new AppError('Não é possível agendar consultas no passado.', 400);
+    }
     const appointmentEnd = new Date(appointmentDate.getTime() + durationInMinutes * 60000);
 
     // Validação de Conflito de Horário para o mesmo dentista
@@ -217,6 +221,10 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
     */
 
     const appointmentDate = new Date(date);
+    const now = new Date();
+    if (appointmentDate.getTime() < now.getTime()) {
+      throw new AppError('Não é possível reagendar para horários no passado.', 400);
+    }
     const appointmentEnd = new Date(appointmentDate.getTime() + durationInMinutes * 60000);
 
     const startOfDay = new Date(appointmentDate.getTime() - 24 * 60 * 60 * 1000);

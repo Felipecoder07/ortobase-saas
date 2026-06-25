@@ -155,8 +155,15 @@ const Finance: React.FC = () => {
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [selectedAppt, setSelectedAppt] = useState<any>(null);
   const [refundAppt, setRefundAppt] = useState<any>(null);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string>('');
   const [refundReason, setRefundReason] = useState('');
   const [payForm, setPayForm] = useState<{method: string, amount: number | string, serviceType: string, installments: number, hasDiscount: boolean, discountType: 'PERCENTAGE' | 'VALUE', discountInput: string, procedureIds: string[], basePrice: number}>({ method: 'PIX', amount: '', serviceType: '', installments: 1, hasDiscount: false, discountType: 'PERCENTAGE', discountInput: '', procedureIds: [], basePrice: 0 });
+
+  const [filterPatient, setFilterPatient] = useState('');
+  const [filterDentist, setFilterDentist] = useState('');
+  const [filterDateStart, setFilterDateStart] = useState('');
+  const [filterDateEnd, setFilterDateEnd] = useState('');
+  const [expandedRows, setExpandedRows] = useState<string[]>([]);
 
   const { showToast } = useToast();
 
@@ -202,11 +209,32 @@ const Finance: React.FC = () => {
   };
 
   const isFullyPaid = (a: any) => {
-    return getPaidSoFar(a) >= (a.price || 0) && a.payments && a.payments.length > 0;
+    const paidPayments = a.payments?.filter((p: any) => p.status === 'PAID') || [];
+    if (paidPayments.length === 0) return false;
+    const price = a.price || 0;
+    if (price === 0 && getPaidSoFar(a) === 0) return false;
+    return getPaidSoFar(a) >= price;
   };
 
-  const pending = appointments.filter((a) => !isFullyPaid(a) && a.status !== 'CANCELED');
-  const paid = appointments.filter((a) => isFullyPaid(a));
+  const applyFilters = (list: any[]) => {
+    return list.filter(a => {
+      let matches = true;
+      if (filterPatient && !a.patient?.name.toLowerCase().includes(filterPatient.toLowerCase())) matches = false;
+      if (filterDentist && a.dentist?.name !== filterDentist) matches = false;
+      if (filterDateStart && a.date.split('T')[0] < filterDateStart) matches = false;
+      if (filterDateEnd && a.date.split('T')[0] > filterDateEnd) matches = false;
+      return matches;
+    });
+  };
+
+  const pending = applyFilters(appointments.filter((a) => !isFullyPaid(a) && a.status === 'COMPLETED'));
+  const paid = applyFilters(appointments.filter((a) => isFullyPaid(a) && a.status === 'COMPLETED'));
+  
+  const availableDentists = Array.from(new Set(appointments.map(a => a.dentist?.name))).filter(Boolean);
+
+  const toggleRow = (id: string) => {
+    setExpandedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+  };
 
   const handleDiscountChange = (type: 'PERCENTAGE' | 'VALUE', inputValue: string, basePrice: number) => {
     let newAmount = basePrice || 0;
@@ -298,10 +326,11 @@ const Finance: React.FC = () => {
   };
 
   const handleRefund = async () => {
+    if (!selectedPaymentId) { showToast('Selecione um pagamento para estornar.', 'error'); return; }
     if (!refundReason) { showToast('A justificativa é obrigatória.', 'error'); return; }
     setLoading(true);
     try {
-      await api.post(`/finance/${refundAppt.payments[0].id}/refund`, { refundReason });
+      await api.post(`/finance/${selectedPaymentId}/refund`, { refundReason });
       showToast('Estorno realizado!', 'success');
       setShowRefundModal(false);
       setRefundReason('');
@@ -343,6 +372,8 @@ const Finance: React.FC = () => {
 
   const openRefundModal = (appt: any) => {
     setRefundAppt(appt);
+    const paidPayments = appt.payments?.filter((p: any) => p.status === 'PAID') || [];
+    setSelectedPaymentId(paidPayments.length > 0 ? paidPayments[0].id : '');
     setRefundReason('');
     setShowRefundModal(true);
   };
@@ -436,12 +467,38 @@ const Finance: React.FC = () => {
           </div>
         </div>
 
+        {/* Filtros */}
+        {(activeTab === 'pending' || activeTab === 'paid') && (
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div className="form-group" style={{ marginBottom: 0, minWidth: '200px', flex: 1 }}>
+              <label className="form-label">Buscar Paciente</label>
+              <input type="text" className="form-input" placeholder="Nome do paciente..." value={filterPatient} onChange={e => setFilterPatient(e.target.value)} />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0, minWidth: '150px' }}>
+              <label className="form-label">Dentista</label>
+              <select className="form-select" value={filterDentist} onChange={e => setFilterDentist(e.target.value)}>
+                <option value="">Todos</option>
+                {availableDentists.map((d: any) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0, width: '130px' }}>
+              <label className="form-label">Data De</label>
+              <input type="date" className="form-input" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0, width: '130px' }}>
+              <label className="form-label">Data Até</label>
+              <input type="date" className="form-input" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} />
+            </div>
+          </div>
+        )}
+
         {/* Pending Tab */}
         {activeTab === 'pending' && (
           pending.length === 0 ? <div className="empty-state">Nenhum pagamento pendente.</div> : (
             <table className="data-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}></th>
                   <th>Data</th>
                   <th>Paciente</th>
                   <th>Dentista</th>
@@ -453,15 +510,29 @@ const Finance: React.FC = () => {
               </thead>
               <tbody>
                 {pending.map((p) => (
-                  <tr key={p.id}>
-                    <td>{new Date(p.date).toLocaleDateString('pt-BR')}</td>
-                    <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
-                    <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.dentist?.name || '-'}</td>
+                  <React.Fragment key={p.id}>
+                    <tr>
+                      <td style={{ textAlign: 'center' }}>
+                        {p.payments && p.payments.length > 1 && (
+                          <button 
+                            onClick={() => toggleRow(p.id)} 
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                          >
+                            {expandedRows.includes(p.id) ? '▼' : '▶'}
+                          </button>
+                        )}
+                      </td>
+                      <td>{new Date(p.date).toLocaleDateString('pt-BR')}</td>
+                      <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
+                      <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.dentist?.name || '-'}</td>
                     <td>{p.serviceType}</td>
                     <td><StatusBadge status={p.status} /></td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span>R$ {p.price?.toFixed(2) || '0.00'}</span>
+                        {(!p.price || p.price === 0) && (
+                          <span style={{ fontSize: '11px', color: 'var(--amber)', fontWeight: 500 }}>Definir Valor</span>
+                        )}
                         {getPaidSoFar(p) > 0 && (
                           <span style={{ fontSize: '11px', color: 'var(--green)', fontWeight: 500 }}>
                             Já pago: R$ {getPaidSoFar(p).toFixed(2)}
@@ -475,6 +546,39 @@ const Finance: React.FC = () => {
                       </button>
                     </td>
                   </tr>
+                  {expandedRows.includes(p.id) && p.payments && p.payments.length > 1 && (
+                    <tr style={{ background: 'var(--bg)' }}>
+                      <td></td>
+                      <td colSpan={7}>
+                        <div style={{ padding: '12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)', margin: '8px 0' }}>
+                          <h4 style={{ fontSize: '13px', marginBottom: '8px', color: 'var(--text-primary)' }}>Histórico de Pagamentos</h4>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                                <th style={{ textAlign: 'left', paddingBottom: '4px' }}>Data do Pag.</th>
+                                <th style={{ textAlign: 'left', paddingBottom: '4px' }}>Método</th>
+                                <th style={{ textAlign: 'left', paddingBottom: '4px' }}>Valor</th>
+                                <th style={{ textAlign: 'left', paddingBottom: '4px' }}>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {p.payments.map((pay: any) => (
+                                <tr key={pay.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                  <td style={{ padding: '6px 0' }}>{new Date(pay.createdAt || p.date).toLocaleDateString('pt-BR')}</td>
+                                  <td style={{ padding: '6px 0' }}>{getMethodLabel(pay.method)} {pay.installments > 1 ? `(${pay.installments}x)` : ''}</td>
+                                  <td style={{ padding: '6px 0' }}>R$ {pay.amount.toFixed(2)}</td>
+                                  <td style={{ padding: '6px 0' }}>
+                                    {pay.status === 'PAID' ? <span style={{ color: 'var(--green)' }}>Pago</span> : <span style={{ color: 'var(--red)' }}>Estornado</span>}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -487,6 +591,7 @@ const Finance: React.FC = () => {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}></th>
                   <th>Data</th>
                   <th>Paciente</th>
                   <th>Dentista</th>
@@ -498,38 +603,82 @@ const Finance: React.FC = () => {
               </thead>
               <tbody>
                 {paid.map((p) => (
-                  <tr key={p.id}>
-                    <td>{new Date(p.date).toLocaleDateString('pt-BR')}</td>
-                    <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
-                    <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.dentist?.name || '-'}</td>
-                    <td>{p.serviceType}</td>
-                    <td>
-                      <span className="badge badge-blue">
-                        {p.payments && p.payments.length === 1 
-                          ? getMethodLabel(p.payments[0].method) 
-                          : 'Múltiplos'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontWeight: 600, color: 'var(--green)', fontSize: '14px' }}>
-                            R$ {getPaidSoFar(p).toFixed(2)}
-                          </span>
+                  <React.Fragment key={p.id}>
+                    <tr>
+                      <td style={{ textAlign: 'center' }}>
+                        {p.payments && p.payments.length > 1 && (
+                          <button 
+                            onClick={() => toggleRow(p.id)} 
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                          >
+                            {expandedRows.includes(p.id) ? '▼' : '▶'}
+                          </button>
+                        )}
+                      </td>
+                      <td>{new Date(p.date).toLocaleDateString('pt-BR')}</td>
+                      <td style={{ fontWeight: 500 }}>{p.patient.name}</td>
+                      <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.dentist?.name || '-'}</td>
+                      <td>{p.serviceType}</td>
+                      <td>
+                        <span className="badge badge-blue">
+                          {p.payments && p.payments.length === 1 
+                            ? getMethodLabel(p.payments[0].method) 
+                            : 'Múltiplos'}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontWeight: 600, color: 'var(--green)', fontSize: '14px' }}>
+                              R$ {getPaidSoFar(p).toFixed(2)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                        <button className="btn btn-outline btn-sm" onClick={() => handleSendReceipt(p.payments[0].id)}>
-                          <MessageCircle size={13} /> Comprovante
-                        </button>
-                        <button className="btn btn-outline-red btn-sm" onClick={() => openRefundModal(p)}>
-                          <RefreshCw size={13} /> Estornar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                          <button className="btn btn-outline btn-sm" onClick={() => handleSendReceipt(p.payments?.[0]?.id)}>
+                            <MessageCircle size={13} /> Comprovante
+                          </button>
+                          <button className="btn btn-outline-red btn-sm" onClick={() => openRefundModal(p)}>
+                            <RefreshCw size={13} /> Estornar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedRows.includes(p.id) && p.payments && p.payments.length > 1 && (
+                      <tr style={{ background: 'var(--bg)' }}>
+                        <td></td>
+                        <td colSpan={7}>
+                          <div style={{ padding: '12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)', margin: '8px 0' }}>
+                            <h4 style={{ fontSize: '13px', marginBottom: '8px', color: 'var(--text-primary)' }}>Histórico de Pagamentos</h4>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                                  <th style={{ textAlign: 'left', paddingBottom: '4px' }}>Data do Pag.</th>
+                                  <th style={{ textAlign: 'left', paddingBottom: '4px' }}>Método</th>
+                                  <th style={{ textAlign: 'left', paddingBottom: '4px' }}>Valor</th>
+                                  <th style={{ textAlign: 'left', paddingBottom: '4px' }}>Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {p.payments.map((pay: any) => (
+                                  <tr key={pay.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <td style={{ padding: '6px 0' }}>{new Date(pay.createdAt || p.date).toLocaleDateString('pt-BR')}</td>
+                                    <td style={{ padding: '6px 0' }}>{getMethodLabel(pay.method)} {pay.installments > 1 ? `(${pay.installments}x)` : ''}</td>
+                                    <td style={{ padding: '6px 0' }}>R$ {pay.amount.toFixed(2)}</td>
+                                    <td style={{ padding: '6px 0' }}>
+                                      {pay.status === 'PAID' ? <span style={{ color: 'var(--green)' }}>Pago</span> : <span style={{ color: 'var(--red)' }}>Estornado</span>}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -641,7 +790,7 @@ const Finance: React.FC = () => {
             {/* Advanced Charts Row */}
             {advancedMetrics && (
               <div className="grid-2" style={{ marginTop: '24px' }}>
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
                   <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px', textAlign: 'center' }}>Distribuição de Status (Consultas)</h3>
                   <div style={{ width: '100%', height: '240px' }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -669,7 +818,7 @@ const Finance: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
                   <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px', textAlign: 'center' }}>Adimplência vs Inadimplência</h3>
                   <div style={{ width: '100%', height: '240px' }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -681,7 +830,7 @@ const Finance: React.FC = () => {
                         <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                         <YAxis allowDecimals={false} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                         <RechartsTooltip 
-                          cursor={{fill: '#f1f5f9'}}
+                          cursor={{fill: 'var(--table-hover)'}}
                           contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                         />
                         <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={60} />
@@ -848,9 +997,22 @@ const Finance: React.FC = () => {
             </div>
             <div className="modal-body">
               <div className="alert-box alert-red">
-                <strong>Atenção!</strong> Você está prestes a estornar o pagamento de{' '}
-                <strong>R$ {refundAppt.payments && refundAppt.payments[0]?.amount?.toFixed(2)}</strong> do paciente{' '}
+                <strong>Atenção!</strong> Você está prestes a estornar um pagamento do paciente{' '}
                 <strong>{refundAppt.patient.name}</strong>.
+              </div>
+              <div className="form-group">
+                <label className="form-label">Selecione o Pagamento *</label>
+                <select 
+                  className="form-select" 
+                  value={selectedPaymentId}
+                  onChange={(e) => setSelectedPaymentId(e.target.value)}
+                >
+                  {refundAppt.payments?.filter((p: any) => p.status === 'PAID').map((p: any) => (
+                    <option key={p.id} value={p.id}>
+                      R$ {p.amount.toFixed(2)} - {getMethodLabel(p.method)} ({new Date(p.createdAt).toLocaleDateString('pt-BR')})
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
                 <label className="form-label">Justificativa do Estorno *</label>

@@ -32,17 +32,9 @@ export const createPayment = async (req: AuthRequest, res: Response) => {
 
     const finalAmount = amount !== undefined ? Number(amount) : balanceRemaining;
 
-    if (finalAmount > balanceRemaining) {
-      return res.status(400).json({ error: `O valor (R$ ${finalAmount}) excede o saldo devedor (R$ ${balanceRemaining}).` });
-    }
 
-    // Regra: Parcela mínima R$30 no cartão
-    if (['CREDIT_CARD'].includes(method) && installments > 1) {
-      const installmentValue = finalAmount / installments;
-      if (installmentValue < 30) {
-        return res.status(400).json({ error: 'O valor mínimo por parcela é de R$ 30,00.' });
-      }
-    } else if (method !== 'CREDIT_CARD' && installments > 1) {
+
+    if (method !== 'CREDIT_CARD' && installments > 1) {
        return res.status(400).json({ error: 'Parcelamento só é permitido no cartão de crédito.' });
     }
 

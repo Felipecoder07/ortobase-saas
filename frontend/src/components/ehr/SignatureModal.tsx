@@ -175,7 +175,7 @@ const SignatureModal: React.FC<SignatureModalProps> = ({ isOpen, onClose, onSave
         
         {activeTab === 'desktop' && (
           <>
-            <div style={{ border: '1px solid var(--border)', borderRadius: '8px', backgroundColor: '#ffffff', marginBottom: '16px' }}>
+            <div style={{ border: '1px solid var(--border)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', marginBottom: '16px' }}>
               <SignatureCanvas 
                 ref={sigCanvas}
                 penColor="black"
@@ -202,7 +202,7 @@ const SignatureModal: React.FC<SignatureModalProps> = ({ isOpen, onClose, onSave
         {activeTab === 'mobile' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '10px 0 20px 0' }}>
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)', margin: 0 }}>Aponte a câmera do celular do paciente para o código abaixo:</p>
-            <div style={{ padding: '16px', backgroundColor: '#fff', borderRadius: '12px', border: '1px solid var(--border)' }}>
+            <div style={{ padding: '16px', backgroundColor: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border)' }}>
               <QRCodeSVG value={mobileLink} size={200} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>

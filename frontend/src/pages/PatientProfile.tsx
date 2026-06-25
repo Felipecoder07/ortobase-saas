@@ -27,6 +27,7 @@ interface Patient {
   phone: string;
   dateOfBirth: string;
   clinicalNotes: string;
+  avatarUrl?: string;
   appointments: Appointment[];
 }
 
@@ -111,9 +112,17 @@ const PatientProfile: React.FC = () => {
         
         {/* Header Info */}
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '24px' }}>
-          <div className="patient-avatar" style={{ width: '64px', height: '64px', fontSize: '24px', backgroundColor: 'var(--primary)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {patient.name.charAt(0).toUpperCase()}
-          </div>
+          {patient.avatarUrl ? (
+            <img 
+              src={`http://${window.location.hostname}:3000${patient.avatarUrl}`} 
+              alt="Avatar" 
+              style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} 
+            />
+          ) : (
+            <div className="patient-avatar" style={{ width: '64px', height: '64px', fontSize: '24px', backgroundColor: 'var(--primary)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {patient.name.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div>
             <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', color: 'var(--text-primary)' }}>{patient.name}</h2>
             <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)', fontSize: '14px' }}>
