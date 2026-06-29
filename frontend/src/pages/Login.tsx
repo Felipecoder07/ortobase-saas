@@ -244,7 +244,19 @@ const Login: React.FC = () => {
               {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
             </button>
 
-
+            <div style={{ marginTop: '16px', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ fontSize: '12px', padding: '8px 12px', width: '100%', borderColor: '#6366f1', color: '#6366f1', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}
+                  onClick={() => navigate('/super-admin/login')}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  Acesso Administrativo (Super Admin)
+                </button>
+              </div>
+            </div>
           </form>
 
           <p style={{ textAlign: 'center', fontSize: '14px', color: '#64748B', marginTop: '20px' }}>
