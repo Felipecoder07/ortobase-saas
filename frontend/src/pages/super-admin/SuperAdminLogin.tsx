@@ -5,8 +5,8 @@ import { ShieldCheck, Mail, Lock, ArrowLeft } from 'lucide-react';
 
 const SuperAdminLogin: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('superadmin@ortobase.com');
+  const [password, setPassword] = useState('123456');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
