@@ -13,15 +13,6 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
 
-  useEffect(() => {
-    // Força tema claro apenas na tela de login
-    document.documentElement.setAttribute('data-theme', 'light');
-    return () => {
-      // Restaura o tema do usuário ao sair da tela de login
-      document.documentElement.setAttribute('data-theme', theme);
-    };
-  }, [theme]);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -29,11 +20,14 @@ const Login: React.FC = () => {
 
     try {
       const response = await api.post('/auth/login', { email, password });
+      localStorage.removeItem('sa_token');
+      localStorage.removeItem('sa_role');
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('role', response.data.role);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Credenciais inválidas. Tente novamente.');
+      console.error("Login error:", err);
+      setError(err.response?.data?.error || `Erro de conexão: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -44,7 +38,15 @@ const Login: React.FC = () => {
       display: 'flex',
       minHeight: '100vh',
       width: '100%',
-    }}>
+      // Força as variáveis do tema claro localmente para não dar conflito com o dark mode
+      '--bg': '#F1F5F9',
+      '--card-bg': '#FFFFFF',
+      '--border': '#E2E8F0',
+      '--text-primary': '#0F172A',
+      '--text-secondary': '#64748B',
+      '--text-muted': '#94A3B8',
+      '--shadow-md': '0 4px 24px rgba(0,0,0,0.08)',
+    } as React.CSSProperties}>
       {/* Left Panel */}
       <div style={{
         flex: '0 0 50%',
@@ -152,7 +154,7 @@ const Login: React.FC = () => {
       {/* Right Panel */}
       <div style={{
         flex: '0 0 50%',
-        background: '#F1F5F9',
+        background: 'var(--bg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -164,8 +166,8 @@ const Login: React.FC = () => {
           padding: '36px',
           width: '100%',
           maxWidth: '420px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-          border: '1px solid #E2E8F0',
+          boxShadow: 'var(--shadow-md)',
+          border: '1px solid var(--border)',
         }}>
           <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>
             Bem-vindo de volta
@@ -250,7 +252,7 @@ const Login: React.FC = () => {
                   type="button"
                   className="btn btn-outline"
                   style={{ fontSize: '11px', padding: '6px 10px', flex: 1 }}
-                  onClick={() => { setEmail('adm'); setPassword('adm'); }}
+                  onClick={() => { setEmail('teste@clinica.com'); setPassword('123456'); }}
                 >
                   Admin
                 </button>
@@ -270,12 +272,23 @@ const Login: React.FC = () => {
                 >
                   Dentista
                 </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ fontSize: '11px', padding: '6px 10px', flex: 1, borderColor: '#6366f1', color: '#6366f1' }}
+                  onClick={() => navigate('/super-admin/login')}
+                >
+                  Admin Mestre
+                </button>
               </div>
             </div>
           </form>
 
-          <p style={{ textAlign: 'center', fontSize: '12px', color: '#94A3B8', marginTop: '20px' }}>
-            Acesso restrito a usuários autorizados
+          <p style={{ textAlign: 'center', fontSize: '14px', color: '#64748B', marginTop: '20px' }}>
+            Esqueceu sua senha? <a href="/recover-password" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Recuperar senha</a>
+          </p>
+          <p style={{ textAlign: 'center', fontSize: '14px', color: '#64748B', marginTop: '10px' }}>
+            Ainda não tem uma conta? <a href="/register" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Cadastre sua clínica</a>
           </p>
         </div>
       </div>

@@ -383,20 +383,17 @@ const Finance: React.FC = () => {
     return <span className="badge badge-amber">● Pendente</span>;
   };
 
-  const exportToCSV = async (type: 'day' | 'month') => {
+  const exportToCSV = async (type: 'pending' | 'paid') => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const endpoint = type === 'day' ? `/appointments?date=${today}` : '/appointments';
-      const res = await api.get(endpoint);
-      const data = res.data;
-      if (!data || data.length === 0) return showToast('Nenhum dado para exportar.', 'error');
+      const dataToExport = type === 'pending' ? pending : paid;
+      if (!dataToExport || dataToExport.length === 0) return showToast('Nenhum dado para exportar.', 'error');
       
       const headers = ['Data/Hora', 'Paciente', 'Telefone', 'Dentista', 'Serviço', 'Status', 'Valor', 'Pago?'];
-      const rows = data.map((a: any) => [
+      const rows = dataToExport.map((a: any) => [
         new Date(a.date).toLocaleString('pt-BR'),
         a.patient.name,
         a.patient.phone,
-        a.dentist.name,
+        a.dentist?.name || '-',
         a.serviceType,
         STATUS_LABELS[a.status] || a.status,
         a.price || 0,
@@ -412,7 +409,7 @@ const Finance: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `relatorio_${type === 'day' ? 'diario' : 'mensal'}.csv`);
+      link.setAttribute('download', `relatorio_financeiro_${type}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -693,11 +690,11 @@ const Finance: React.FC = () => {
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => exportToCSV('day')} style={{ gap: '4px' }}>
-                    <Download size={13} /> CSV do Dia
+                  <button className="btn btn-ghost btn-sm" onClick={() => exportToCSV('pending')} style={{ gap: '4px' }}>
+                    <Download size={13} /> Exportar Pendentes (CSV)
                   </button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => exportToCSV('month')} style={{ gap: '4px' }}>
-                    <Download size={13} /> CSV do Mês
+                  <button className="btn btn-ghost btn-sm" onClick={() => exportToCSV('paid')} style={{ gap: '4px' }}>
+                    <Download size={13} /> Exportar Pagos (CSV)
                   </button>
                 </div>
 

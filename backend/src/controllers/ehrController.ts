@@ -1,11 +1,12 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../middlewares/authMiddleware';
 import prisma from '../prisma';
 
 // --- ANAMNESE ---
 
-export const getAnamnesis = async (req: Request, res: Response) => {
+export const getAnamnesis = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
@@ -29,9 +30,9 @@ export const getAnamnesis = async (req: Request, res: Response) => {
   }
 };
 
-export const upsertAnamnesis = async (req: Request, res: Response) => {
+export const upsertAnamnesis = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
@@ -75,17 +76,17 @@ export const upsertAnamnesis = async (req: Request, res: Response) => {
 
 // --- PLANOS DE TRATAMENTO ---
 
-export const getTreatmentPlans = async (req: Request, res: Response) => {
+export const getTreatmentPlans = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
 
     let whereClause: any = { patientId, tenantId };
 
-    if ((req.user as any)?.role === 'DENTIST') {
-      const authDentist = await prisma.dentist.findFirst({ where: { email: (req.user as any)?.email, tenantId } });
+    if (req.user!.role === 'DENTIST') {
+      const authDentist = await prisma.dentist.findFirst({ where: { email: req.user!.email, tenantId } });
       if (authDentist) {
         whereClause.dentistId = authDentist.id;
       } else {
@@ -110,10 +111,10 @@ export const getTreatmentPlans = async (req: Request, res: Response) => {
   }
 };
 
-export const createTreatmentPlan = async (req: Request, res: Response) => {
+export const createTreatmentPlan = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
-    const userId = req.user?.id; // Assumindo que req.user tem id do usuario logado
+    const tenantId = req.user!.tenantId;
+    const userId = req.user!.id; // Assumindo que req.user tem id do usuario logado
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
@@ -154,9 +155,9 @@ export const createTreatmentPlan = async (req: Request, res: Response) => {
   }
 };
 
-export const updateTreatmentPlanStatus = async (req: Request, res: Response) => {
+export const updateTreatmentPlanStatus = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { planId } = req.params;
@@ -173,9 +174,9 @@ export const updateTreatmentPlanStatus = async (req: Request, res: Response) => 
   }
 };
 
-export const deleteTreatmentPlan = async (req: Request, res: Response) => {
+export const deleteTreatmentPlan = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { planId } = req.params;
@@ -192,9 +193,9 @@ export const deleteTreatmentPlan = async (req: Request, res: Response) => {
 
 // --- ODONTOGRAMA ---
 
-export const getToothConditions = async (req: Request, res: Response) => {
+export const getToothConditions = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
@@ -208,9 +209,9 @@ export const getToothConditions = async (req: Request, res: Response) => {
   }
 };
 
-export const updateToothCondition = async (req: Request, res: Response) => {
+export const updateToothCondition = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
@@ -244,9 +245,9 @@ export const updateToothCondition = async (req: Request, res: Response) => {
 
 // --- ANEXOS ---
 
-export const getAttachments = async (req: Request, res: Response) => {
+export const getAttachments = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
@@ -261,9 +262,9 @@ export const getAttachments = async (req: Request, res: Response) => {
   }
 };
 
-export const uploadAttachment = async (req: Request, res: Response) => {
+export const uploadAttachment = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
@@ -280,7 +281,7 @@ export const uploadAttachment = async (req: Request, res: Response) => {
         filename: file.originalname,
         fileUrl: `/uploads/${file.filename}`,
         fileType: file.mimetype,
-        uploadedBy: req.user?.name || req.user?.email || 'User'
+        uploadedBy: (req.user as any)?.name || req.user!.email || 'User'
       }
     });
 
@@ -290,9 +291,9 @@ export const uploadAttachment = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteAttachment = async (req: Request, res: Response) => {
+export const deleteAttachment = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { attachmentId } = req.params;
@@ -332,9 +333,9 @@ const saveBase64Image = (base64String: string, filenamePrefix: string): string =
   return `/uploads/signatures/${filename}`;
 };
 
-export const signAnamnesis = async (req: Request, res: Response) => {
+export const signAnamnesis = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
@@ -365,9 +366,9 @@ export const signAnamnesis = async (req: Request, res: Response) => {
   }
 };
 
-export const unlockAnamnesis = async (req: Request, res: Response) => {
+export const unlockAnamnesis = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { patientId } = req.params;
@@ -387,9 +388,9 @@ export const unlockAnamnesis = async (req: Request, res: Response) => {
   }
 };
 
-export const signTreatmentPlan = async (req: Request, res: Response) => {
+export const signTreatmentPlan = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { planId } = req.params;
@@ -414,9 +415,9 @@ export const signTreatmentPlan = async (req: Request, res: Response) => {
   }
 };
 
-export const getOdontogramLegends = async (req: AuthRequest, res: Response) => {
+export const getOdontogramLegends = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     const legends = await prisma.odontogramLegend.findMany({
       where: { tenantId: tenantId! }
     });
@@ -427,9 +428,9 @@ export const getOdontogramLegends = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const addOdontogramLegend = async (req: AuthRequest, res: Response) => {
+export const addOdontogramLegend = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     const { name, color } = req.body;
     
     if (!name || !color) return res.status(400).json({ error: 'Name and color are required' });
@@ -460,9 +461,9 @@ export const addOdontogramLegend = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const deleteOdontogramLegend = async (req: AuthRequest, res: Response) => {
+export const deleteOdontogramLegend = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user!.tenantId;
     const { name } = req.params;
 
     // Remove conditions matching this legend name
@@ -481,26 +482,51 @@ export const deleteOdontogramLegend = async (req: AuthRequest, res: Response) =>
   }
 };
 
-// In-memory map for mobile signatures
-const mobileSignatures = new Map<string, string>();
+// File-based storage for mobile signatures
+const getMobileSignaturesFilePath = () => {
+  const dir = path.join(__dirname, '../../uploads');
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return path.join(dir, 'mobile_signatures.json');
+};
 
-export const receiveMobileSignature = async (req: Request, res: Response) => {
+const getMobileSignatures = (): Record<string, string> => {
+  const filePath = getMobileSignaturesFilePath();
+  if (!fs.existsSync(filePath)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch {
+    return {};
+  }
+};
+
+const saveMobileSignatures = (data: Record<string, string>) => {
+  fs.writeFileSync(getMobileSignaturesFilePath(), JSON.stringify(data));
+};
+
+export const receiveMobileSignature = async (req: TenantRequest, res: Response) => {
   try {
     const { token, signatureDataUrl } = req.body;
     if (!token || !signatureDataUrl) return res.status(400).json({ error: 'Missing token or signature' });
-    mobileSignatures.set(token, signatureDataUrl);
+    
+    const sigs = getMobileSignatures();
+    sigs[token] = signatureDataUrl;
+    saveMobileSignatures(sigs);
+    
     return res.json({ success: true });
   } catch (error) {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-export const pollMobileSignature = async (req: Request, res: Response) => {
+export const pollMobileSignature = async (req: TenantRequest, res: Response) => {
   try {
     const { token } = req.params;
-    if (mobileSignatures.has(token)) {
-      const signatureDataUrl = mobileSignatures.get(token);
-      mobileSignatures.delete(token); // Clear once retrieved
+    const sigs = getMobileSignatures();
+    
+    if (sigs[token]) {
+      const signatureDataUrl = sigs[token];
+      delete sigs[token]; // Clear once retrieved
+      saveMobileSignatures(sigs);
       return res.json({ signatureDataUrl });
     }
     return res.status(202).json({ status: 'pending' });

@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -10,6 +10,10 @@ generator client {
 model Tenant {
   id        String    @id @default(uuid())
   name      String
+  status    String    @default("ACTIVE") // ACTIVE, SUSPENDED, TRIAL
+  plan      String    @default("FREE") // FREE, PRO, ENTERPRISE
+  planExpiresAt DateTime?
+  trialEndsAt   DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   users     User[]
@@ -23,18 +27,21 @@ model Tenant {
   toothConditions ToothCondition[]
   attachments PatientAttachment[]
   odontogramLegends OdontogramLegend[]
+  auditLogs AuditLog[]
 }
 
 model User {
   id                  String    @id @default(uuid())
-  tenantId            String
-  tenant              Tenant    @relation(fields: [tenantId], references: [id])
+  tenantId            String?
+  tenant              Tenant?   @relation(fields: [tenantId], references: [id])
   name                String
   email               String    @unique
   password            String
-  role                String    @default("RECEPTIONIST") // ADMIN, RECEPTIONIST, DENTIST
+  role                String    @default("RECEPTIONIST") // SUPER_ADMIN, ADMIN, RECEPTIONIST, DENTIST
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
+  resetToken          String?
+  resetTokenExpires   DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 }
@@ -95,6 +102,7 @@ model Appointment {
   price              Float    @default(0.0)
   status             String   @default("SCHEDULED") // SCHEDULED, CONFIRMED, CANCELED, COMPLETED, NO_SHOW
   cancellationReason String?
+  observation        String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   payments           Payment[]
@@ -220,4 +228,13 @@ model OdontogramLegend {
   createdAt DateTime @default(now())
 
   @@unique([tenantId, name])
+}
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
+  action    String
+  details   String?
+  userEmail String?
+  createdAt DateTime @default(now())
 }

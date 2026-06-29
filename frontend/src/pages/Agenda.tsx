@@ -13,6 +13,7 @@ interface Appointment {
   date: string;
   durationInMinutes: number;
   serviceType: string;
+  observation?: string;
   status: string;
   cancellationReason?: string;
   patient: { name: string; phone: string };
@@ -278,7 +279,7 @@ const Agenda: React.FC = () => {
   const calendarRef = useRef<any>(null);
 
   const [formData, setFormData] = useState({
-    patientId: '', dentistId: '', date: '', time: '', durationInMinutes: 30, serviceType: '', price: '', procedureIds: [] as string[]
+    patientId: '', dentistId: '', date: '', time: '', durationInMinutes: 30, serviceType: '', observation: '', price: '', procedureIds: [] as string[]
   });
 
   const openNewModal = (dateStr?: string) => {
@@ -295,7 +296,7 @@ const Agenda: React.FC = () => {
     } else {
       date = currentDate;
     }
-    setFormData({ patientId: '', dentistId: '', date, time, durationInMinutes: 30, serviceType: '', price: '', procedureIds: [] });
+    setFormData({ patientId: '', dentistId: '', date, time, durationInMinutes: 30, serviceType: '', observation: '', price: '', procedureIds: [] });
     setShowModal(true);
   };
 
@@ -312,6 +313,7 @@ const Agenda: React.FC = () => {
       time: timeStr,
       durationInMinutes: appt.durationInMinutes,
       serviceType: appt.serviceType || '',
+      observation: appt.observation || '',
       price: appt.price ? maskCurrency(appt.price.toFixed(2).replace('.', '')) : '',
       procedureIds: appt.procedures?.map((p: any) => p.id) || []
     });
@@ -339,12 +341,12 @@ const Agenda: React.FC = () => {
 
       const [apptRes, patRes, dentRes, procRes] = await Promise.all([
         api.get(url),
-        api.get('/patients'),
+        api.get('/patients?limit=1000'),
         api.get('/dentists'),
         api.get('/procedures')
       ]);
       setAppointments(apptRes.data);
-      setPatients(patRes.data);
+      setPatients(patRes.data.data || patRes.data);
       setDentists(dentRes.data);
       setProcedures(procRes.data);
     } catch (err) { console.error(err); }
@@ -399,6 +401,7 @@ const Agenda: React.FC = () => {
         date: dateObj.toISOString(),
         durationInMinutes: Number(formData.durationInMinutes),
         serviceType: formData.serviceType,
+        observation: formData.observation,
         price: formData.price ? parseCurrency(formData.price) : 0,
         procedureIds: formData.procedureIds.length > 0 ? formData.procedureIds : undefined,
       };
@@ -654,7 +657,7 @@ const Agenda: React.FC = () => {
 
           <select
             className="input"
-            style={{ width: '180px', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', background: 'var(--card-bg)', border: '1px solid var(--border)' }}
+            style={{ width: '180px', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', background: 'var(--card-bg)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
             value={selectedDentist}
             onChange={(e) => setSelectedDentist(e.target.value)}
           >
@@ -1021,6 +1024,17 @@ const Agenda: React.FC = () => {
                   placeholder="0,00"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: maskCurrency(e.target.value) })}
+                />
+              </div>
+              
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label">Observações</label>
+                <textarea
+                  className="form-input"
+                  style={{ minHeight: '80px', resize: 'vertical' }}
+                  value={formData.observation || ''}
+                  onChange={(e) => setFormData({ ...formData, observation: e.target.value })}
+                  placeholder="Ex: Primeira consulta, paciente sente dor..."
                 />
               </div>
               {editId && (

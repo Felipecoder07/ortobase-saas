@@ -1,24 +1,6 @@
 import { Router } from 'express';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { authenticate } from '../middlewares/authMiddleware';
-
-// Configuração do Multer para salvar os uploads localmente
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../../uploads');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
+import { authenticate, requireRole } from '../middlewares/authMiddleware';
+import { upload } from '../middlewares/uploadMiddleware';
 import {
   getAnamnesis,
   upsertAnamnesis,
@@ -43,7 +25,6 @@ import {
 
 const router = Router();
 
-import { authenticate, requireRole } from '../middlewares/authMiddleware';
 
 // Rotas públicas para assinatura no celular
 router.post('/mobile-sign', receiveMobileSignature);

@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: ortobase-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=ortobase_super_secret_production_key_2026
+      - FRONTEND_URL=http://localhost:5173
+    volumes:
+      - ./backend/prisma/dev.db:/app/prisma/dev.db
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=http://localhost:3000/api
+    container_name: ortobase-frontend
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+    depends_on:
+      - backend

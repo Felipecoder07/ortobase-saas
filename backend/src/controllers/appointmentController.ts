@@ -1,11 +1,12 @@
 import type { Response } from 'express';
-import type { AuthRequest } from '../middlewares/authMiddleware';
+import type { TenantRequest } from '../middlewares/authMiddleware';
 import prisma from '../prisma';
 import { AppError } from '../utils/AppError';
 
-export const createAppointment = async (req: AuthRequest, res: Response) => {
+export const createAppointment = async (req: TenantRequest, res: Response) => {
+  try {
     const { tenantId } = req.user!;
-    const { patientId, dentistId, date, durationInMinutes, serviceType, price, procedureIds } = req.body;
+    const { patientId, dentistId, date, durationInMinutes, serviceType, price, procedureIds, observation } = req.body;
 
     const appointmentDate = new Date(date);
     const now = new Date();
@@ -83,6 +84,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
         durationInMinutes,
         serviceType,
         price: price !== undefined ? Number(price) : 0,
+        observation,
         ...(procedureIds && procedureIds.length > 0 && {
           procedures: {
             connect: procedureIds.map((id: string) => ({ id }))
@@ -97,9 +99,17 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
     });
 
     return res.status(201).json(appointment);
+  } catch (error: any) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ error: 'Erro interno no servidor' });
+  }
 };
 
-export const getAppointments = async (req: AuthRequest, res: Response) => {
+export const getAppointments = async (req: TenantRequest, res: Response) => {
+  try {
     const { tenantId } = req.user!;
     const { date, start, end, dentistId } = req.query;
 
@@ -135,9 +145,17 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
     });
 
     return res.json(appointments);
+  } catch (error: any) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ error: 'Erro interno no servidor' });
+  }
 };
 
-export const updateAppointmentStatus = async (req: AuthRequest, res: Response) => {
+export const updateAppointmentStatus = async (req: TenantRequest, res: Response) => {
+  try {
     const { tenantId } = req.user!;
     const { id } = req.params;
     const { status, cancellationReason } = req.body;
@@ -150,15 +168,12 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
       throw new AppError('Consulta não encontrada', 404);
     }
 
-    // Temporariamente removendo a restrição para Dentista mexer na agenda de todos
-    /*
     if (req.user!.role === 'DENTIST') {
       const dentist = await prisma.dentist.findFirst({ where: { email: req.user!.email, tenantId } });
       if (!dentist || appointment.dentistId !== dentist.id) {
         throw new AppError('Acesso negado: Você só pode modificar suas próprias consultas.', 403);
       }
     }
-    */
 
     const updated = await prisma.appointment.update({
       where: { id: id as string },
@@ -166,9 +181,17 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
     });
 
     return res.json(updated);
+  } catch (error: any) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ error: 'Erro interno no servidor' });
+  }
 };
 
-export const deleteAppointment = async (req: AuthRequest, res: Response) => {
+export const deleteAppointment = async (req: TenantRequest, res: Response) => {
+  try {
     const { tenantId } = req.user!;
     const { id } = req.params;
 
@@ -180,27 +203,32 @@ export const deleteAppointment = async (req: AuthRequest, res: Response) => {
       throw new AppError('Consulta não encontrada', 404);
     }
 
-    // Temporariamente removendo a restrição para Dentista mexer na agenda de todos
-    /*
     if (req.user!.role === 'DENTIST') {
       const dentist = await prisma.dentist.findFirst({ where: { email: req.user!.email, tenantId } });
       if (!dentist || appointment.dentistId !== dentist.id) {
         throw new AppError('Acesso negado: Você só pode excluir suas próprias consultas.', 403);
       }
     }
-    */
 
     await prisma.appointment.delete({
       where: { id: id as string }
     });
 
     return res.json({ message: 'Consulta excluída' });
+  } catch (error: any) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ error: 'Erro interno no servidor' });
+  }
 };
 
-export const updateAppointment = async (req: AuthRequest, res: Response) => {
+export const updateAppointment = async (req: TenantRequest, res: Response) => {
+  try {
     const { tenantId } = req.user!;
     const { id } = req.params;
-    const { patientId, dentistId, date, durationInMinutes, serviceType, price, procedureIds } = req.body;
+    const { patientId, dentistId, date, durationInMinutes, serviceType, price, procedureIds, observation } = req.body;
 
     const appointment = await prisma.appointment.findFirst({
       where: { id, tenantId }
@@ -210,15 +238,12 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
       throw new AppError('Consulta não encontrada', 404);
     }
 
-    // Temporariamente removendo a restrição para Dentista mexer na agenda de todos
-    /*
     if (req.user!.role === 'DENTIST') {
       const authDentist = await prisma.dentist.findFirst({ where: { email: req.user!.email, tenantId } });
       if (!authDentist || appointment.dentistId !== authDentist.id || dentistId !== authDentist.id) {
         throw new AppError('Acesso negado: Você só pode modificar suas próprias consultas.', 403);
       }
     }
-    */
 
     const appointmentDate = new Date(date);
     const now = new Date();
@@ -296,6 +321,7 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
         date: appointmentDate, 
         durationInMinutes, 
         serviceType,
+        observation,
         ...(price !== undefined && { price: Number(price) }),
         ...(procedureIds !== undefined && {
           procedures: {
@@ -307,4 +333,11 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
     });
 
     return res.json(updated);
+  } catch (error: any) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ error: 'Erro interno no servidor' });
+  }
 };

@@ -1,14 +1,16 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middlewares/authMiddleware';
+import { TenantRequest } from '../middlewares/authMiddleware';
 import prisma from '../prisma';
 import { validateCPF } from '../utils/cpfValidator';
 
-export const createPatient = async (req: AuthRequest, res: Response) => {
+export const createPatient = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { name, cpf, dateOfBirth, phone, email, address, clinicalNotes, avatarUrl } = req.body;
 
-
+    if (!validateCPF(cpf)) {
+      return res.status(400).json({ error: 'CPF inválido.' });
+    }
 
     // Check unique CPF in tenant
     const existingPatient = await prisma.patient.findUnique({
@@ -33,6 +35,15 @@ export const createPatient = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        action: 'PATIENT_CREATED',
+        details: `Paciente ${patient.name} criado`,
+        userEmail: req.user!.email
+      }
+    });
+
     return res.status(201).json(patient);
   } catch (error) {
     console.error(error);
@@ -40,10 +51,14 @@ export const createPatient = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getPatients = async (req: AuthRequest, res: Response) => {
+export const getPatients = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
-    const { query } = req.query;
+    const { query, page = '1', limit = '10' } = req.query;
+
+    const pageNumber = parseInt(page as string, 10);
+    const limitNumber = parseInt(limit as string, 10);
+    const skip = (pageNumber - 1) * limitNumber;
 
     let whereClause: any = { tenantId, isActive: true };
 
@@ -55,20 +70,30 @@ export const getPatients = async (req: AuthRequest, res: Response) => {
       ];
     }
 
-    const patients = await prisma.patient.findMany({
-      where: whereClause,
-      orderBy: { name: 'asc' },
-      take: 50
-    });
+    const [patients, total] = await Promise.all([
+      prisma.patient.findMany({
+        where: whereClause,
+        orderBy: { name: 'asc' },
+        skip,
+        take: limitNumber
+      }),
+      prisma.patient.count({ where: whereClause })
+    ]);
 
-    return res.json(patients);
+    return res.json({
+      data: patients,
+      total,
+      page: pageNumber,
+      limit: limitNumber,
+      totalPages: Math.ceil(total / limitNumber) || 1
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Erro interno no servidor' });
   }
 };
 
-export const getPatientById = async (req: AuthRequest, res: Response) => {
+export const getPatientById = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params;
@@ -97,13 +122,15 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const updatePatient = async (req: AuthRequest, res: Response) => {
+export const updatePatient = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params;
     const { name, phone, email, address, clinicalNotes, cpf, avatarUrl } = req.body;
 
-
+    if (cpf && !validateCPF(cpf)) {
+      return res.status(400).json({ error: 'CPF inválido.' });
+    }
 
     const patient = await prisma.patient.findFirst({
       where: { id, tenantId }
@@ -125,7 +152,7 @@ export const updatePatient = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const deletePatient = async (req: AuthRequest, res: Response) => {
+export const deletePatient = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params;

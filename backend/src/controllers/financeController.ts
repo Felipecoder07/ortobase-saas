@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middlewares/authMiddleware';
+import { TenantRequest } from '../middlewares/authMiddleware';
 import prisma from '../prisma';
 
-export const createPayment = async (req: AuthRequest, res: Response) => {
+export const createPayment = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId, role } = req.user!;
     const { appointmentId, method, amount, serviceType, installments = 1, procedureIds, price } = req.body;
@@ -74,7 +74,7 @@ export const createPayment = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getFinancials = async (req: AuthRequest, res: Response) => {
+export const getFinancials = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { date } = req.query; // optional date filter YYYY-MM-DD
@@ -110,7 +110,7 @@ export const getFinancials = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const refundPayment = async (req: AuthRequest, res: Response) => {
+export const refundPayment = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params;
@@ -140,7 +140,7 @@ export const refundPayment = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getDefaulters = async (req: AuthRequest, res: Response) => {
+export const getDefaulters = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { month } = req.query; // YYYY-MM
@@ -186,7 +186,7 @@ export const getDefaulters = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const sendReceipt = async (req: AuthRequest, res: Response) => {
+export const sendReceipt = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params; // payment ID
@@ -214,7 +214,7 @@ export const sendReceipt = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getReports = async (req: AuthRequest, res: Response) => {
+export const getReports = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { month } = req.query; // YYYY-MM
@@ -255,7 +255,7 @@ export const getReports = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getDashboardMetrics = async (req: AuthRequest, res: Response) => {
+export const getDashboardMetrics = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { month } = req.query; // optional YYYY-MM

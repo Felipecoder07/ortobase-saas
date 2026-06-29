@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Trash2, X, Edit2, User } from 'lucide-react';
+import { Plus, Search, Trash2, X, Edit2, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../utils/api';
 import { useToast } from '../contexts/ToastContext';
 import { maskCPF, maskPhone, maskDate, maskName } from '../utils/masks';
@@ -22,6 +22,8 @@ const Patients: React.FC = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [editId, setEditId] = useState<string | null>(null);
   const { showToast } = useToast();
   const [formData, setFormData] = useState({ name: '', cpf: '', dateOfBirth: '', phone: '', clinicalNotes: '', avatarUrl: '' });
@@ -47,12 +49,15 @@ const Patients: React.FC = () => {
 
   const fetchPatients = async () => {
     try {
-      const res = await api.get(`/patients?query=${search}`);
-      setPatients(res.data);
-    } catch (err) { console.error(err); }
+      setLoading(true);
+      const res = await api.get(`/patients?query=${search}&page=${currentPage}&limit=10`);
+      setPatients(res.data.data);
+      setTotalPages(res.data.totalPages);
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchPatients(); }, [search]);
+  useEffect(() => { setCurrentPage(1); }, [search]);
+  useEffect(() => { fetchPatients(); }, [search, currentPage]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -221,6 +226,32 @@ const Patients: React.FC = () => {
               ))}
             </tbody>
           </table>
+        )}
+
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderTop: '1px solid var(--border)' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                className="btn btn-outline" 
+                disabled={currentPage === 1} 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                style={{ padding: '6px 12px' }}
+              >
+                <ChevronLeft size={16} /> Anterior
+              </button>
+              <button 
+                className="btn btn-outline" 
+                disabled={currentPage === totalPages} 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                style={{ padding: '6px 12px' }}
+              >
+                Próxima <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

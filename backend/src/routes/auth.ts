@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, recoverPassword } from '../controllers/authController';
+import { register, login, recoverPassword, resetPassword, getProfile, updateProfile } from '../controllers/authController';
 import { authenticate } from '../middlewares/authMiddleware';
 
 const router = Router();
@@ -66,10 +66,9 @@ router.post('/register', register);
  */
 router.post('/login', login);
 router.post('/recover-password', recoverPassword);
+router.post('/reset-password', resetPassword);
 
-// Exemplo de rota protegida
-router.get('/me', authenticate, (req, res) => {
-  res.json({ user: req.user });
-});
+router.get('/profile', authenticate, getProfile);
+router.put('/profile', authenticate, updateProfile);
 
 export default router;

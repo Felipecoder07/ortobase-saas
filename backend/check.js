@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function main() { const sa = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } }); console.log(sa); } main().finally(() => prisma.());

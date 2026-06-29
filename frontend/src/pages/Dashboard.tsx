@@ -33,6 +33,7 @@ const Dashboard: React.FC = () => {
   const [defaulters, setDefaulters] = useState<any[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const role = localStorage.getItem('role');
 
   const d = new Date();
   const year = d.getFullYear();
@@ -109,7 +110,9 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="metric-card green">
+        {role === 'ADMIN' && (
+          <>
+            <div className="metric-card green">
           <div className="metric-card-info">
             <div className="metric-card-label">Faturamento do Mês</div>
             <div className="metric-card-value green">
@@ -140,6 +143,8 @@ const Dashboard: React.FC = () => {
             <UserX size={20} />
           </div>
         </div>
+          </>
+        )}
       </div>
 
       {/* Today's appointments table */}

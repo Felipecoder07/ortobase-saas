@@ -23,10 +23,14 @@ interface ToothProps {
 
 const Tooth: React.FC<ToothProps> = ({ number, conditions, onFaceClick, legends }) => {
   const getFaceColor = (face: FaceType) => {
-    const c = conditions.find(c => c.face === face || c.face === 'ALL');
+    // Prioriza a condição específica da face. Se não achar, usa a condição "ALL" (ex: dente inteiro saudável)
+    let c = conditions.find(c => c.face === face);
+    if (!c) {
+      c = conditions.find(c => c.face === 'ALL');
+    }
     if (!c) return '#ffffff';
     const legend = legends.find(l => l.id === c.condition);
-    return legend ? legend.color : '#94a3b8'; // Cinza se deletado
+    return legend ? legend.color : '#94a3b8'; // Cinza se a legenda foi deletada
   };
 
   const isExtracted = conditions.some(c => c.condition === 'EXTRACTED' && c.face === 'ALL');

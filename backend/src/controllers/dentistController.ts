@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middlewares/authMiddleware';
+import { TenantRequest } from '../middlewares/authMiddleware';
 import prisma from '../prisma';
 
-export const createDentist = async (req: AuthRequest, res: Response) => {
+export const createDentist = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { name, cro, specialties, phone, email, avatarUrl, gender } = req.body;
@@ -27,7 +27,7 @@ export const createDentist = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getDentists = async (req: AuthRequest, res: Response) => {
+export const getDentists = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { query } = req.query;
@@ -54,7 +54,7 @@ export const getDentists = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getDentistById = async (req: AuthRequest, res: Response) => {
+export const getDentistById = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params;
@@ -74,7 +74,7 @@ export const getDentistById = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const updateDentist = async (req: AuthRequest, res: Response) => {
+export const updateDentist = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params;
@@ -100,7 +100,7 @@ export const updateDentist = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const deleteDentist = async (req: AuthRequest, res: Response) => {
+export const deleteDentist = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = req.user!;
     const { id } = req.params;
