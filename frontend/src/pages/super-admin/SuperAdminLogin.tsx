@@ -114,7 +114,7 @@ const SuperAdminLogin: React.FC = () => {
               <input
                 type="email"
                 className="sa-form-control"
-                placeholder="admin@ortobase.com"
+                placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -186,30 +186,7 @@ const SuperAdminLogin: React.FC = () => {
             {loading ? 'Autenticando...' : 'Acessar Painel'}
           </button>
 
-          {/* Quick Login Buttons for Testing */}
-          <div style={{ marginTop: '24px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '20px' }}>
-            <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px', textAlign: 'center', fontWeight: 500 }}>Acesso Rápido (Ambiente de Testes)</p>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-              <button
-                type="button"
-                style={{ 
-                  fontSize: '12px', 
-                  padding: '8px 16px', 
-                  borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#cbd5e1',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
-                onClick={() => { setEmail('superadmin@ortobase.com'); setPassword('123456'); }}
-              >
-                Preencher Credenciais Admin
-              </button>
-            </div>
-          </div>
+
         </form>
       </div>
     </div>
