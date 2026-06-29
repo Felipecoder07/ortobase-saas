@@ -76,7 +76,36 @@ app.use('/api/audit', auditRoutes);
 // Middleware de Erros (DEVE ser o último)
 app.use(errorHandler);
 
+import prisma from './prisma';
+import bcrypt from 'bcrypt';
+
 const PORT = process.env.PORT || 3000;
-app.listen(Number(PORT), () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+
+async function startServer() {
+  try {
+    // Auto-seed do Super Admin
+    const email = process.env.SUPER_ADMIN_EMAIL || 'superadmin@ortobase.com';
+    const password = process.env.SUPER_ADMIN_PASSWORD || '123456';
+    const existingAdmin = await prisma.user.findUnique({ where: { email } });
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await prisma.user.create({
+        data: {
+          name: 'Super Admin',
+          email,
+          password: hashedPassword,
+          role: 'SUPER_ADMIN',
+        },
+      });
+      console.log('Auto-seed: Super Admin criado com sucesso (', email, ')');
+    }
+  } catch (error) {
+    console.error('Erro no auto-seed do Super Admin:', error);
+  }
+
+  app.listen(Number(PORT), () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
+}
+
+startServer();
