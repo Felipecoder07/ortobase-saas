@@ -2,23 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma';
 
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    tenantId?: string;
-    role: string;
-    email: string;
-  };
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+    }
+  }
 }
 
-export interface TenantRequest extends Request {
-  user: {
-    id: string;
-    tenantId: string;
-    role: string;
-    email: string;
-  };
-}
+export interface AuthRequest extends Request {}
+export interface TenantRequest extends Request {}
 
 const tenantStatusCache = new Map<string, { status: string, expiresAt: number }>();
 
