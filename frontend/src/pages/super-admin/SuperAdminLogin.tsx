@@ -5,8 +5,8 @@ import { ShieldCheck, Mail, Lock, ArrowLeft } from 'lucide-react';
 
 const SuperAdminLogin: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('superadmin@ortobase.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -186,6 +186,35 @@ const SuperAdminLogin: React.FC = () => {
             {loading ? 'Autenticando...' : 'Acessar Painel'}
           </button>
 
+          <button
+            type="button"
+            onClick={() => {
+              setEmail('superadmin@ortobase.com');
+              setPassword('123456');
+            }}
+            style={{
+              width: '100%',
+              background: 'transparent',
+              color: '#94a3b8',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '12px',
+              borderRadius: '12px',
+              fontSize: '13px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              marginTop: '16px',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
+          >
+            <ShieldCheck size={16} />
+            Preencher Credenciais Master
+          </button>
 
         </form>
       </div>
